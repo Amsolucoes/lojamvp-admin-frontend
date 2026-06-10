@@ -1,0 +1,44 @@
+.login-bg {
+  min-height: 100vh; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; position: relative; overflow: hidden;
+}
+.login-orb-1, .login-orb-2 {
+  position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+}
+.login-orb-1 { width: 400px; height: 400px; background: rgba(99,102,241,.08); top: -100px; right: -100px; }
+.login-orb-2 { width: 300px; height: 300px; background: rgba(96,165,250,.06); bottom: -80px; left: -80px; }
+.login-box {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 40px 36px;
+  width: 100%; max-width: 400px; position: relative; z-index: 1; box-shadow: var(--shadow-lg);
+}
+.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.login-logo-icon {
+  width: 36px; height: 36px; background: var(--accent); color: #fff;
+  border-radius: var(--radius-sm); display: flex; align-items: center;
+  justify-content: center; font-size: 17px; font-weight: 700;
+}
+.login-logo-nome { font-size: 15px; font-weight: 600; }
+.login-logo-sub  { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .07em; }
+.login-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.login-sub   { font-size: 13px; color: var(--text-3); margin-bottom: 28px; }
+.login-form  { display: flex; flex-direction: column; gap: 16px; }
+.senha-wrap  { position: relative; }
+.senha-wrap input { padding-right: 40px; }
+.olho {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: transparent; color: var(--text-3); padding: 4px;
+  display: flex; align-items: center;
+}
+.olho:hover { color: var(--text-1); }
+.login-erro {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--red-bg); border: 1px solid rgba(248,113,113,.2);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 13px; color: var(--red);
+}
+.login-btn {
+  width: 100%; padding: 11px; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;
+}
