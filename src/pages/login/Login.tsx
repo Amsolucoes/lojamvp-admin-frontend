@@ -10,7 +10,7 @@ export function Login() {
   const [mostra, setMostra]     = useState(false);
   const [erro, setErro]         = useState('');
   const [loading, setLoading]   = useState(false);
-  const [nomeLoja, setNomeLoja] = useState('A;Soluções');
+  const [nomeLoja, setNomeLoja] = useState('AlSoluções');
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
