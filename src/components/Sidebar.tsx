@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Building2, CreditCard, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, LogOut, Settings, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -13,6 +13,7 @@ const NAV_CLIENTE = [
   { to: '/cliente',           icon: LayoutDashboard, label: 'Minha Assinatura' },
   { to: '/cliente/faturas',   icon: CreditCard,      label: 'Faturas'          },
   { to: '/cliente/config',    icon: Settings,        label: 'Configurações'    },
+  { to: '/cliente/perfil',    icon: Tag,             label: 'Tipo de Loja'     },
 ];
 
 function ini(nome: string) {

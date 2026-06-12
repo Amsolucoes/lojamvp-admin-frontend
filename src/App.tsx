@@ -6,6 +6,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLojas } from './pages/admin/AdminLojas';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
 import { ClienteConfig } from './pages/cliente/ClienteConfig';
+import { ClientePerfil } from './pages/cliente/ClientePerfil';
 import './index.css';
 
 function Layout() {
@@ -44,6 +45,7 @@ function Rotas() {
           <>
             <Route path="/cliente"         element={<ClienteDashboard />} />
             <Route path="/cliente/config"  element={<ClienteConfig />} />
+            <Route path="/cliente/perfil"  element={<ClientePerfil />} />
             <Route path="*"               element={<Navigate to="/cliente" replace />} />
           </>
         )}
