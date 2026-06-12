@@ -10,6 +10,7 @@ export function Login() {
   const [mostra, setMostra]     = useState(false);
   const [erro, setErro]         = useState('');
   const [loading, setLoading]   = useState(false);
+  const [nomeLoja, setNomeLoja] = useState('A;Soluções');
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +28,7 @@ export function Login() {
         <div className="login-logo">
           <div className="login-logo-icon">⬡</div>
           <div>
-            <div className="login-logo-nome">LojaMVP</div>
+            <div className="login-logo-nome">{nomeLoja}</div>
             <div className="login-logo-sub">Painel de Controle</div>
           </div>
         </div>
