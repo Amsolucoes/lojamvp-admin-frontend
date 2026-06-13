@@ -117,3 +117,32 @@ tbody td { padding: 11px 14px; vertical-align: middle; }
 @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes spin    { to { transform: rotate(360deg); } }
+
+/* ── Responsivo ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+
+  .layout { flex-direction: column; }
+  .layout-main { overflow-y: auto; }
+
+  .page { padding: 16px; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+
+  .dash-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 22px; }
+
+  .modal { max-width: 100% !important; max-height: 90vh; overflow-y: auto; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+
+  .form-grid-2 { grid-template-columns: 1fr !important; }
+
+  table { font-size: 12px; }
+  tbody td { padding: 8px 10px; }
+  thead th { padding: 8px 10px; }
+}
+
+@media (max-width: 480px) {
+  .dash-stats { grid-template-columns: 1fr; }
+}
