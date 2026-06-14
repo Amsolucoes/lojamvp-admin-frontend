@@ -106,49 +106,104 @@ export function AdminLojas() {
         ) : lista.length === 0 ? (
           <div className="empty"><Building2 size={32} /><p>Nenhuma loja encontrada.</p></div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Loja</th><th>Status</th><th>Próx. Vencimento</th><th>Mensalidade</th><th>Atraso</th><th>Ações</th></tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Tabela — desktop */}
+            <div className="table-wrap admin-table-desktop">
+              <table>
+                <thead>
+                  <tr><th>Loja</th><th>Status</th><th>Próx. Vencimento</th><th>Mensalidade</th><th>Atraso</th><th>Ações</th></tr>
+                </thead>
+                <tbody>
+                  {lista.map(l => (
+                    <tr key={l.id}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{l.nome}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l.email}</div>
+                      </td>
+                      <td><span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span></td>
+                      <td style={{ color: 'var(--text-2)', fontSize: 13 }}>
+                        {l.proximoVencimento ? new Date(l.proximoVencimento).toLocaleDateString('pt-BR') : '—'}
+                      </td>
+                      <td style={{ fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
+                      <td>
+                        {l.emAtraso
+                          ? <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
+                          : <span style={{ color: 'var(--text-3)', fontSize: 12 }}>—</span>}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className="btn-ghost" title="Editar" onClick={() => {
+                            setSel(l);
+                            setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor });
+                            setErro(''); setModal('editar');
+                          }}><Edit2 size={13} /></button>
+                          <button className="btn-ghost" title="Registrar pagamento" style={{ color: 'var(--green)' }} onClick={() => {
+                            setSel(l);
+                            setPagForm({ valor: String(l.mensalidadeValor), vencimento: new Date().toISOString().slice(0,10), pagoEm: new Date().toISOString().slice(0,10), forma: 'pix', obs: '' });
+                            setErro(''); setModal('pagamento');
+                          }}>R$</button>
+                          {l.status === 'Bloqueado'
+                            ? <button className="btn-ghost" style={{ color: 'var(--green)' }} title="Desbloquear" onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={13} /></button>
+                            : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Cards — mobile */}
+            <div className="admin-cards-mobile">
               {lista.map(l => (
-                <tr key={l.id}>
-                  <td>
-                    <div style={{ fontWeight: 500 }}>{l.nome}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l.email}</div>
-                  </td>
-                  <td><span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span></td>
-                  <td style={{ color: 'var(--text-2)', fontSize: 13 }}>
-                    {l.proximoVencimento ? new Date(l.proximoVencimento).toLocaleDateString('pt-BR') : '—'}
-                  </td>
-                  <td style={{ fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
-                  <td>
-                    {l.emAtraso
-                      ? <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
-                      : <span style={{ color: 'var(--text-3)', fontSize: 12 }}>—</span>}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="btn-ghost" title="Editar" onClick={() => {
+                <div key={l.id} className="admin-card-mobile">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{l.nome}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{l.email}</div>
+                    </div>
+                    <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, fontSize: 13 }}>
+                    <span style={{ color: 'var(--text-3)' }}>
+                      Venc.: <strong style={{ color: 'var(--text-2)' }}>
+                        {l.proximoVencimento ? new Date(l.proximoVencimento).toLocaleDateString('pt-BR') : '—'}
+                      </strong>
+                    </span>
+                    <span style={{ fontWeight: 600 }}>{fmt(l.mensalidadeValor)}/mês</span>
+                  </div>
+                  {l.emAtraso && (
+                    <div style={{ marginTop: 6 }}>
+                      <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0' }}
+                      onClick={() => {
                         setSel(l);
                         setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor });
                         setErro(''); setModal('editar');
-                      }}><Edit2 size={13} /></button>
-                      <button className="btn-ghost" title="Registrar pagamento" style={{ color: 'var(--green)' }} onClick={() => {
+                      }}>
+                      <Edit2 size={12} /> Editar
+                    </button>
+                    <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--green)' }}
+                      onClick={() => {
                         setSel(l);
                         setPagForm({ valor: String(l.mensalidadeValor), vencimento: new Date().toISOString().slice(0,10), pagoEm: new Date().toISOString().slice(0,10), forma: 'pix', obs: '' });
                         setErro(''); setModal('pagamento');
-                      }}>R$</button>
-                      {l.status === 'Bloqueado'
-                        ? <button className="btn-ghost" style={{ color: 'var(--green)' }} title="Desbloquear" onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={13} /></button>
-                        : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
-                      }
-                    </div>
-                  </td>
-                </tr>
+                      }}>
+                      R$ Pgto
+                    </button>
+                    {l.status === 'Bloqueado'
+                      ? <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={12} /> Ativar</button>
+                      : <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={12} /> Bloquear</button>
+                    }
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
