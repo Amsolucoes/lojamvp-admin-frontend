@@ -106,31 +106,63 @@ export function ClienteDashboard() {
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-2)' }}>
           Histórico de faturas
         </div>
-        <table>
-          <thead><tr><th>Vencimento</th><th>Valor</th><th>Status</th><th>Forma</th><th>Pago em</th><th></th></tr></thead>
-          <tbody>
-            {data.historicoFaturas.map(f => (
-              <tr key={f.id}>
-                <td>{fmtData(f.vencimento)}</td>
-                <td style={{ fontWeight: 500 }}>{fmt(f.valor)}</td>
-                <td>
+
+        {/* Tabela — desktop */}
+        <div className="admin-table-desktop">
+          <table>
+            <thead><tr><th>Vencimento</th><th>Valor</th><th>Status</th><th>Forma</th><th>Pago em</th><th></th></tr></thead>
+            <tbody>
+              {data.historicoFaturas.map(f => (
+                <tr key={f.id}>
+                  <td>{fmtData(f.vencimento)}</td>
+                  <td style={{ fontWeight: 500 }}>{fmt(f.valor)}</td>
+                  <td>
+                    {f.status === 'pago'     && <span className="badge badge-green">Pago</span>}
+                    {f.status === 'pendente' && <span className="badge badge-yellow">Pendente</span>}
+                    {f.status === 'atrasado' && <span className="badge badge-red">Atrasado</span>}
+                  </td>
+                  <td style={{ color: 'var(--text-3)' }}>{f.formaPagamento ?? '—'}</td>
+                  <td style={{ color: 'var(--text-3)' }}>{fmtData(f.pagoEm)}</td>
+                  <td>
+                    {(f.status === 'pendente' || f.status === 'atrasado') && (
+                      <button className="btn-secondary" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => abrirPagamento(f)}>
+                        Pagar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Cards — mobile */}
+        <div className="admin-cards-mobile">
+          {data.historicoFaturas.map(f => (
+            <div key={f.id} className="admin-card-mobile">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{fmtData(f.vencimento)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                    {f.formaPagamento ?? '—'} {f.pagoEm ? `· pago em ${fmtData(f.pagoEm)}` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <span style={{ fontWeight: 600 }}>{fmt(f.valor)}</span>
                   {f.status === 'pago'     && <span className="badge badge-green">Pago</span>}
                   {f.status === 'pendente' && <span className="badge badge-yellow">Pendente</span>}
                   {f.status === 'atrasado' && <span className="badge badge-red">Atrasado</span>}
-                </td>
-                <td style={{ color: 'var(--text-3)' }}>{f.formaPagamento ?? '—'}</td>
-                <td style={{ color: 'var(--text-3)' }}>{fmtData(f.pagoEm)}</td>
-                <td>
-                  {(f.status === 'pendente' || f.status === 'atrasado') && (
-                    <button className="btn-secondary" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => abrirPagamento(f)}>
-                      Pagar
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+              {(f.status === 'pendente' || f.status === 'atrasado') && (
+                <button className="btn-primary" style={{ width: '100%', marginTop: 10, fontSize: 13 }}
+                  onClick={() => abrirPagamento(f)}>
+                  Pagar {fmt(f.valor)}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Modal pagamento */}
