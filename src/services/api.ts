@@ -29,12 +29,32 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T;
 }
 
+async function download(path: string, nomeArquivo: string): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (res.status === 401) { handleUnauth(); throw new Error('Sessão expirada.'); }
+  if (!res.ok) throw new Error(`Erro ${res.status} ao gerar backup.`);
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeArquivo;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export const api = {
   get:    <T>(path: string)                => request<T>('GET',    path),
   post:   <T>(path: string, body: unknown) => request<T>('POST',   path, body),
   put:    <T>(path: string, body: unknown) => request<T>('PUT',    path, body),
   patch:  <T>(path: string, body: unknown) => request<T>('PATCH',  path, body),
   delete: <T>(path: string)               => request<T>('DELETE', path),
+  download,
 };
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -48,6 +68,7 @@ export interface Loja {
   proximoVencimento?: string; ultimaCobranca?: string;
   criadoEm: string; totalUsuarios: number;
   totalPago: number; emAtraso: boolean; diasAtraso: number;
+  promocional?: boolean;
 }
 
 export interface Pagamento {

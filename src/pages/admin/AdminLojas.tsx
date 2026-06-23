@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2 } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2 } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -27,6 +27,8 @@ export function AdminLojas() {
   const [pagForm, setPagForm] = useState({ valor: '', vencimento: '', pagoEm: new Date().toISOString().slice(0,10), forma: 'pix', obs: '' });
   const [erro, setErro]       = useState('');
   const [saving, setSaving]   = useState(false);
+  const [modalDel, setModalDel] = useState<Loja | null>(null);
+  const [confirmaNome, setConfirmaNome] = useState('');
 
   useEffect(() => { carregar(); }, []);
 
@@ -77,6 +79,29 @@ export function AdminLojas() {
     finally { setSaving(false); }
   }
 
+  async function fazerBackup(loja: Loja) {
+    try {
+      await api.download(`/api/admin/lojas/${loja.id}/backup`, `backup-${loja.nome.replace(/ /g, '-').toLowerCase()}.json`);
+    } catch (e) {
+      alert('Erro ao gerar backup: ' + (e as Error).message);
+    }
+  }
+
+async function deletarLoja() {
+    if (!modalDel || confirmaNome !== modalDel.nome) return;
+    setSaving(true);
+    try {
+      await api.delete(`/api/admin/lojas/${modalDel.id}`);
+      await carregar();
+      setModalDel(null);
+      setConfirmaNome('');
+    } catch (e) {
+      alert('Erro ao deletar: ' + (e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const lista = lojas.filter(l =>
     l.nome.toLowerCase().includes(busca.toLowerCase()) ||
     l.email.includes(busca) ||
@@ -94,6 +119,22 @@ export function AdminLojas() {
           <Plus size={15} style={{ verticalAlign: -2 }} /> Nova loja
         </button>
       </div>
+
+      {(() => {
+        const usadas = lojas.filter(l => l.promocional).length;
+        const restantes = Math.max(0, 10 - usadas);
+        return (
+          <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}>
+            <span style={{ fontSize: 18 }}>🎯</span>
+            <div>
+              <strong>{usadas} de 10</strong> vagas promocionais usadas
+              <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
+                ({restantes} {restantes === 1 ? 'vaga restante' : 'vagas restantes'} com R$89,90)
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ marginBottom: 16, maxWidth: 320, position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
@@ -146,6 +187,8 @@ export function AdminLojas() {
                             ? <button className="btn-ghost" style={{ color: 'var(--green)' }} title="Desbloquear" onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={13} /></button>
                             : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
                           }
+                          <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
+                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -199,6 +242,8 @@ export function AdminLojas() {
                       ? <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={12} /> Ativar</button>
                       : <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={12} /> Bloquear</button>
                     }
+                    <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
+                    <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                   </div>
                 </div>
               ))}
@@ -333,6 +378,36 @@ export function AdminLojas() {
               <button className="btn-secondary" onClick={() => setModal(null)}>Cancelar</button>
               <button className="btn-primary" onClick={registrarPagamento} disabled={saving}>
                 {saving ? 'Registrando...' : 'Confirmar pagamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal deletar loja */}
+      {modalDel && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalDel(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Deletar loja</h2>
+              <button className="btn-ghost" onClick={() => setModalDel(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 14 }}>
+                Isso vai apagar <strong style={{ color: 'var(--text-1)' }}>{modalDel.nome}</strong> e
+                todos os dados (produtos, clientes, vendas, trocas). <strong style={{ color: 'var(--red)' }}>Não pode ser desfeito.</strong>
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
+                Faça o backup antes, se precisar. Para confirmar, digite o nome da loja:
+              </p>
+              <input value={confirmaNome} onChange={e => setConfirmaNome(e.target.value)} placeholder={modalDel.nome} autoFocus />
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => fazerBackup(modalDel)}>
+                <Download size={13} /> Backup
+              </button>
+              <button className="btn-danger" onClick={deletarLoja} disabled={saving || confirmaNome !== modalDel.nome}>
+                {saving ? 'Deletando...' : 'Deletar definitivamente'}
               </button>
             </div>
           </div>
