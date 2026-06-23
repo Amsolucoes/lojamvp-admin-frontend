@@ -102,13 +102,15 @@ async function deletarLoja() {
     }
   }
 
-  async function acessarLoja(loja: Loja) {
+ async function acessarLoja(loja: Loja) {
     try {
       const res = await api.post<{ token: string; nome: string; email: string; role: string }>(
         `/api/admin/lojas/${loja.id}/acessar`, {}
       );
-      // Abre o app da loja passando o token pela URL
-      const url = `https://app.aldevsoftware.com.br/suporte?token=${encodeURIComponent(res.token)}&nome=${encodeURIComponent(res.nome)}&email=${encodeURIComponent(res.email)}&role=${res.role}`;
+      const dados = encodeURIComponent(JSON.stringify({
+        token: res.token, nome: res.nome, email: res.email, role: res.role,
+      }));
+      const url = `https://app.aldevsoftware.com.br/suporte#${dados}`;
       window.open(url, '_blank');
     } catch (e) {
       alert('Erro ao acessar loja: ' + (e as Error).message);
