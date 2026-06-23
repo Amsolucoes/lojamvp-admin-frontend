@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Building2, CreditCard, LogOut, Settings, Tag, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, LogOut, Settings, Tag, Menu, X, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import './Sidebar.css';
 
 const NAV_SUPER = [
@@ -24,6 +25,7 @@ function ini(nome: string) {
 export function Sidebar() {
   const { sessao, logout } = useAuth();
   const [aberto, setAberto] = useState(false);
+  const [modalSenha, setModalSenha] = useState(false);
   const isSuperAdmin = sessao?.role === 'superadmin';
   const nav = isSuperAdmin ? NAV_SUPER : NAV_CLIENTE;
 
@@ -70,11 +72,85 @@ export function Sidebar() {
             <div className="sidebar-user-nome">{sessao?.nome}</div>
             <div className="sidebar-user-role">{sessao?.email}</div>
           </div>
+          <button className="btn-ghost sidebar-logout" onClick={() => setModalSenha(true)} title="Trocar senha">
+            <KeyRound size={14} />
+          </button>
           <button className="btn-ghost sidebar-logout" onClick={logout} title="Sair">
             <LogOut size={14} />
           </button>
         </div>
       </aside>
+
+      {modalSenha && <ModalTrocarSenha onClose={() => setModalSenha(false)} />}
     </>
+  );
+}
+
+function ModalTrocarSenha({ onClose }: { onClose: () => void }) {
+  const [atual, setAtual]   = useState('');
+  const [nova, setNova]     = useState('');
+  const [conf, setConf]     = useState('');
+  const [erro, setErro]     = useState('');
+  const [ok, setOk]         = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function salvar() {
+    setErro('');
+    if (!atual || !nova) { setErro('Preencha todos os campos.'); return; }
+    if (nova.length < 8) { setErro('A nova senha deve ter pelo menos 8 caracteres.'); return; }
+    if (nova !== conf) { setErro('A confirmação não confere.'); return; }
+    setSaving(true);
+    try {
+      await api.post('/api/auth/trocar-senha', { senhaAtual: atual, novaSenha: nova });
+      setOk(true);
+      setTimeout(onClose, 1600);
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 400 }}>
+        <div className="modal-header">
+          <h2 style={{ fontSize: 16, fontWeight: 600 }}>Trocar senha</h2>
+          <button className="btn-ghost" onClick={onClose}><X size={16} /></button>
+        </div>
+        <div className="modal-body">
+          {ok ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>✓</div>
+              <p style={{ color: 'var(--green)', fontWeight: 600 }}>Senha alterada com sucesso!</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-group">
+                <label className="form-label">Senha atual</label>
+                <input type="password" value={atual} onChange={e => setAtual(e.target.value)} autoFocus />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nova senha</label>
+                <input type="password" value={nova} onChange={e => setNova(e.target.value)} placeholder="Mínimo 8 caracteres" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Confirmar nova senha</label>
+                <input type="password" value={conf} onChange={e => setConf(e.target.value)} />
+              </div>
+              {erro && <p style={{ color: 'var(--red)', fontSize: 13 }}>{erro}</p>}
+            </div>
+          )}
+        </div>
+        {!ok && (
+          <div className="modal-footer">
+            <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button className="btn-primary" onClick={salvar} disabled={saving}>
+              {saving ? 'Salvando...' : 'Alterar senha'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
