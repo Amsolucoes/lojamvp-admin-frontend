@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -102,6 +102,19 @@ async function deletarLoja() {
     }
   }
 
+  async function acessarLoja(loja: Loja) {
+    try {
+      const res = await api.post<{ token: string; nome: string; email: string; role: string }>(
+        `/api/admin/lojas/${loja.id}/acessar`, {}
+      );
+      // Abre o app da loja passando o token pela URL
+      const url = `https://app.aldevsoftware.com.br/suporte?token=${encodeURIComponent(res.token)}&nome=${encodeURIComponent(res.nome)}&email=${encodeURIComponent(res.email)}&role=${res.role}`;
+      window.open(url, '_blank');
+    } catch (e) {
+      alert('Erro ao acessar loja: ' + (e as Error).message);
+    }
+  }
+
   const lista = lojas.filter(l =>
     l.nome.toLowerCase().includes(busca.toLowerCase()) ||
     l.email.includes(busca) ||
@@ -189,6 +202,7 @@ async function deletarLoja() {
                           }
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                           <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                          <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -244,6 +258,7 @@ async function deletarLoja() {
                     }
                     <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                     <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                    <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                   </div>
                 </div>
               ))}
