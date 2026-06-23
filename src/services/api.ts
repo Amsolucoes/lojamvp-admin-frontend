@@ -69,6 +69,8 @@ export interface Loja {
   criadoEm: string; totalUsuarios: number;
   totalPago: number; emAtraso: boolean; diasAtraso: number;
   promocional?: boolean;
+  fase?: string;
+  diasRestantes?: number;
 }
 
 export interface Pagamento {

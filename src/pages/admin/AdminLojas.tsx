@@ -174,7 +174,19 @@ async function deletarLoja() {
                         <div style={{ fontWeight: 500 }}>{l.nome}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l.email}</div>
                       </td>
-                      <td><span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span></td>
+                      <td>
+                        <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
+                        {l.fase === 'trial' && (
+                          <div style={{ fontSize: 11, color: 'var(--blue, #6366f1)', marginTop: 4 }}>
+                            {l.diasRestantes! > 0 ? `${l.diasRestantes}d de teste` : 'teste termina hoje'}
+                          </div>
+                        )}
+                        {l.fase === 'carencia' && (
+                          <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>
+                            {l.diasRestantes}d p/ bloquear
+                          </div>
+                        )}
+                      </td>
                       <td style={{ color: 'var(--text-2)', fontSize: 13 }}>
                         {l.proximoVencimento ? new Date(l.proximoVencimento).toLocaleDateString('pt-BR') : '—'}
                       </td>
@@ -220,7 +232,19 @@ async function deletarLoja() {
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{l.nome}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{l.email}</div>
                     </div>
-                    <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
+                        {l.fase === 'trial' && (
+                          <div style={{ fontSize: 10, color: 'var(--blue, #6366f1)', marginTop: 3 }}>
+                            {l.diasRestantes! > 0 ? `${l.diasRestantes}d de teste` : 'termina hoje'}
+                          </div>
+                        )}
+                        {l.fase === 'carencia' && (
+                          <div style={{ fontSize: 10, color: 'var(--red)', marginTop: 3 }}>
+                            {l.diasRestantes}d p/ bloquear
+                          </div>
+                        )}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, fontSize: 13 }}>
                     <span style={{ color: 'var(--text-3)' }}>
