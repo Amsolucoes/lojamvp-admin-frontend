@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, CheckCircle, AlertTriangle, Clock, X } from 'lucide-react';
 import { api, DashboardCliente, Pagamento } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function fmtData(s?: string) { return s ? new Date(s).toLocaleDateString('pt-BR') : '—'; }
@@ -16,6 +17,7 @@ export function ClienteDashboard() {
   const [erro, setErro]           = useState('');
   const [cpf, setCpf]             = useState('');
   const [nome, setNome]           = useState('');
+  const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
 
@@ -51,7 +53,7 @@ export function ClienteDashboard() {
     if (!fatura) return;
     const res = await api.get<any>(`/api/pagamentos/${fatura.id}/status`);
     if (res.status === 'pago') { setModalPag(false); await carregar(); }
-    else alert('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.');
+    else toastErro('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.');
   }
 
   if (loading) return <div className="page"><div className="layout-loading"><div className="spinner" /></div></div>;

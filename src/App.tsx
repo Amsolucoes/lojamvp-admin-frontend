@@ -7,6 +7,7 @@ import { AdminLojas } from './pages/admin/AdminLojas';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
 import { ClienteConfig } from './pages/cliente/ClienteConfig';
 import { ClientePerfil } from './pages/cliente/ClientePerfil';
+import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
 function Layout() {
@@ -56,10 +57,13 @@ function Rotas() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Rotas />
-      </BrowserRouter>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Rotas />
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
+    
   );
 }

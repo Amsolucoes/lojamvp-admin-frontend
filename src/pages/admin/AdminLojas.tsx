@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn } from 'lucide-react';
 import { api, Loja } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 
@@ -29,6 +30,7 @@ export function AdminLojas() {
   const [saving, setSaving]   = useState(false);
   const [modalDel, setModalDel] = useState<Loja | null>(null);
   const [confirmaNome, setConfirmaNome] = useState('');
+  const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
 
@@ -83,7 +85,7 @@ export function AdminLojas() {
     try {
       await api.download(`/api/admin/lojas/${loja.id}/backup`, `backup-${loja.nome.replace(/ /g, '-').toLowerCase()}.json`);
     } catch (e) {
-      alert('Erro ao gerar backup: ' + (e as Error).message);
+      toastErro('Erro ao gerar backup: ' + (e as Error).message);
     }
   }
 
@@ -96,7 +98,7 @@ async function deletarLoja() {
       setModalDel(null);
       setConfirmaNome('');
     } catch (e) {
-      alert('Erro ao deletar: ' + (e as Error).message);
+      toastErro('Erro ao deletar: ' + (e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -113,7 +115,7 @@ async function deletarLoja() {
       const url = `https://app.aldevsoftware.com.br/suporte#${dados}`;
       window.open(url, '_blank');
     } catch (e) {
-      alert('Erro ao acessar loja: ' + (e as Error).message);
+      toastErro('Erro ao acessar loja: ' + (e as Error).message);
     }
   }
 
