@@ -19,6 +19,17 @@ const EMPTY_LOJA = {
   tipoPlano: 'loja', modulosAtivos: '',
 };
 
+const MODULOS_LABEL: Record<string, string> = {
+  servicos: '🗓️ Serviços',
+  etiquetas: '🏷️ Etiquetas',
+  nf: '📄 NF',
+};
+
+function badgesModulos(modulosAtivos?: string) {
+  if (!modulosAtivos) return [];
+  return modulosAtivos.split(',').map(m => m.trim()).filter(Boolean);
+}
+
 export function AdminLojas() {
   const [lojas, setLojas]     = useState<Loja[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,6 +189,12 @@ async function deletarLoja() {
                       <td>
                         <div style={{ fontWeight: 500 }}>{l.nome}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l.email}</div>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                          {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
+                          {badgesModulos(l.modulosAtivos).map(m => (
+                            <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
+                          ))}
+                        </div>
                       </td>
                       <td>
                         <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
@@ -236,6 +253,12 @@ async function deletarLoja() {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{l.nome}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{l.email}</div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                        {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
+                        {badgesModulos(l.modulosAtivos).map(m => (
+                          <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
+                        ))}
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span className={`badge ${STATUS_BADGE[l.status] ?? 'badge-accent'}`}>{l.status}</span>
