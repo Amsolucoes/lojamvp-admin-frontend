@@ -71,6 +71,8 @@ export interface Loja {
   promocional?: boolean;
   fase?: string;
   diasRestantes?: number;
+  tipoPlano?: string;
+  modulosAtivos?: string;
 }
 
 export interface Pagamento {

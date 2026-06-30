@@ -16,6 +16,7 @@ const EMPTY_LOJA = {
   nome: '', email: '', cnpj: '', cpf: '', telefone: '',
   corPrimaria: '#6366f1', mensalidadeDia: 10, mensalidadeValor: 120,
   adminNome: '', adminEmail: '', adminSenha: '',
+  tipoPlano: 'loja', modulosAtivos: '',
 };
 
 export function AdminLojas() {
@@ -204,7 +205,7 @@ async function deletarLoja() {
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className="btn-ghost" title="Editar" onClick={() => {
                             setSel(l);
-                            setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor });
+                            setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '' });
                             setErro(''); setModal('editar');
                           }}><Edit2 size={13} /></button>
                           <button className="btn-ghost" title="Registrar pagamento" style={{ color: 'var(--green)' }} onClick={() => {
@@ -267,7 +268,7 @@ async function deletarLoja() {
                     <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0' }}
                       onClick={() => {
                         setSel(l);
-                        setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor });
+                        setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '' });
                         setErro(''); setModal('editar');
                       }}>
                       <Edit2 size={12} /> Editar
@@ -339,6 +340,39 @@ async function deletarLoja() {
                 <div className="form-group">
                   <label className="form-label">Valor mensalidade (R$)</label>
                   <input type="number" min={0} step={0.01} value={form.mensalidadeValor} onChange={e => setForm((f: any) => ({ ...f, mensalidadeValor: +e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Tipo de plano</label>
+                  <select value={form.tipoPlano ?? 'loja'} onChange={e => setForm((f: any) => ({ ...f, tipoPlano: e.target.value }))}>
+                    <option value="loja">Loja (sistema completo)</option>
+                    <option value="loja_modulos">Loja + Módulos</option>
+                    <option value="servicos">Serviços (banho e tosa puro)</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Módulos ativos</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                    {[
+                      { chave: 'servicos', nome: 'Serviços e Agenda', ativo: true },
+                      { chave: 'etiquetas', nome: 'Impressão de etiquetas', ativo: false },
+                      { chave: 'nf', nome: 'Importação de NF', ativo: false },
+                    ].map(mod => {
+                      const lista = (form.modulosAtivos ?? '').split(',').map((m: string) => m.trim()).filter(Boolean);
+                      const marcado = lista.includes(mod.chave);
+                      return (
+                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.ativo ? 'pointer' : 'not-allowed', opacity: mod.ativo ? 1 : 0.5 }}>
+                          <input type="checkbox" checked={marcado} disabled={!mod.ativo}
+                            onChange={e => {
+                              let nova = lista.filter((m: string) => m !== mod.chave);
+                              if (e.target.checked) nova.push(mod.chave);
+                              setForm((f: any) => ({ ...f, modulosAtivos: nova.join(',') }));
+                            }} />
+                          {mod.nome}{!mod.ativo && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {modal === 'nova' && (
