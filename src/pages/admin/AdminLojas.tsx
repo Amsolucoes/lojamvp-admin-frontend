@@ -361,14 +361,18 @@ async function deletarLoja() {
                       const lista = (form.modulosAtivos ?? '').split(',').map((m: string) => m.trim()).filter(Boolean);
                       const marcado = lista.includes(mod.chave);
                       return (
-                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.ativo ? 'pointer' : 'not-allowed', opacity: mod.ativo ? 1 : 0.5 }}>
+                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.ativo ? 'pointer' : 'not-allowed', opacity: mod.ativo ? 1 : 0.5, lineHeight: 1.2 }}>
                           <input type="checkbox" checked={marcado} disabled={!mod.ativo}
+                            style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
                             onChange={e => {
                               let nova = lista.filter((m: string) => m !== mod.chave);
                               if (e.target.checked) nova.push(mod.chave);
                               setForm((f: any) => ({ ...f, modulosAtivos: nova.join(',') }));
                             }} />
-                          {mod.nome}{!mod.ativo && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {mod.nome}
+                            {!mod.ativo && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
+                          </span>
                         </label>
                       );
                     })}
