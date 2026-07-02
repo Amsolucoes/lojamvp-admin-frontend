@@ -17,6 +17,7 @@ const EMPTY_LOJA = {
   corPrimaria: '#6366f1', mensalidadeDia: 10, mensalidadeValor: 120,
   adminNome: '', adminEmail: '', adminSenha: '',
   tipoPlano: 'loja', modulosAtivos: '',
+  ehTeste: false,
 };
 
 const MODULOS_LABEL: Record<string, string> = {
@@ -150,7 +151,7 @@ async function deletarLoja() {
       </div>
 
       {(() => {
-        const usadas = lojas.filter(l => l.promocional).length;
+        const usadas = lojas.filter(l => l.promocional && !l.ehTeste).length;
         const restantes = Math.max(0, 10 - usadas);
         return (
           <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}>
@@ -190,6 +191,7 @@ async function deletarLoja() {
                         <div style={{ fontWeight: 500 }}>{l.nome}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{l.email}</div>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                          {l.ehTeste && <span className="badge badge-yellow" style={{ fontSize: 10 }}>🧪 Teste</span>}
                           {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
                           {badgesModulos(l.modulosAtivos).map(m => (
                             <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
@@ -222,7 +224,8 @@ async function deletarLoja() {
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className="btn-ghost" title="Editar" onClick={() => {
                             setSel(l);
-                            setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '' });
+                            setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? ''
+                              , mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '', ehTeste:  l.ehTeste ?? false});
                             setErro(''); setModal('editar');
                           }}><Edit2 size={13} /></button>
                           <button className="btn-ghost" title="Registrar pagamento" style={{ color: 'var(--green)' }} onClick={() => {
@@ -254,6 +257,7 @@ async function deletarLoja() {
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{l.nome}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{l.email}</div>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                        {l.ehTeste && <span className="badge badge-yellow" style={{ fontSize: 10 }}>🧪 Teste</span>}
                         {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
                         {badgesModulos(l.modulosAtivos).map(m => (
                           <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
@@ -291,7 +295,8 @@ async function deletarLoja() {
                     <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0' }}
                       onClick={() => {
                         setSel(l);
-                        setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? '', mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '' });
+                        setForm({ nome: l.nome, email: l.email, cnpj: l.cnpj ?? '', cpf: l.cpf ?? '', telefone: l.telefone ?? '', corPrimaria: l.corPrimaria, logoUrl: l.logoUrl ?? ''
+                          , mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '', ehTeste: l.ehTeste ?? false });
                         setErro(''); setModal('editar');
                       }}>
                       <Edit2 size={12} /> Editar
@@ -400,6 +405,16 @@ async function deletarLoja() {
                       );
                     })}
                   </div>
+                </div>
+
+                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="checkbox"
+                      checked={form.ehTeste ?? false}
+                      style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+                      onChange={e => setForm((f: any) => ({ ...f, ehTeste: e.target.checked }))} />
+                    <span>🧪 Loja de teste <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(não conta no dashboard, receita nem vagas)</span></span>
+                  </label>
                 </div>
 
                 {modal === 'nova' && (

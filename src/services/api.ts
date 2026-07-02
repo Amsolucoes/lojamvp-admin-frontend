@@ -73,6 +73,7 @@ export interface Loja {
   diasRestantes?: number;
   tipoPlano?: string;
   modulosAtivos?: string;
+  ehTeste?: boolean;
 }
 
 export interface Pagamento {
