@@ -13,6 +13,10 @@ export function ClienteConfig() {
   const [ok, setOk]               = useState(false);
   const [erro, setErro]           = useState('');
   const fileRef                   = useRef<HTMLInputElement>(null);
+  const [emailForm, setEmailForm] = useState({ novoEmail: '', senhaAtual: '' });
+  const [trocandoEmail, setTrocandoEmail] = useState(false);
+  const [emailOk, setEmailOk] = useState('');
+  const [emailErro, setEmailErro] = useState('');
 
   useEffect(() => {
     api.get<any>('/api/cliente/config').then(res => {
@@ -35,6 +39,24 @@ export function ClienteConfig() {
     } catch (e) {
       setErro('Erro ao fazer upload: ' + (e as Error).message);
     } finally { setUploading(false); }
+  }
+
+  async function trocarEmail() {
+    setEmailErro(''); setEmailOk('');
+    if (!emailForm.novoEmail.trim() || !emailForm.senhaAtual) {
+      setEmailErro('Preencha o novo e-mail e sua senha atual.');
+      return;
+    }
+    setTrocandoEmail(true);
+    try {
+      await api.patch('/api/cliente/email', emailForm);
+      setEmailOk('E-mail atualizado! Use o novo e-mail no próximo login.');
+      setEmailForm({ novoEmail: '', senhaAtual: '' });
+    } catch (e) {
+      setEmailErro((e as Error).message);
+    } finally {
+      setTrocandoEmail(false);
+    }
   }
 
   async function salvar() {
@@ -122,6 +144,36 @@ export function ClienteConfig() {
           <button className="btn-primary" onClick={salvar} disabled={saving}
             style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Save size={15} /> {saving ? 'Salvando...' : 'Salvar configurações'}
+          </button>
+        </div>
+      </div>
+
+      {/* Trocar e-mail de login */}
+      <div className="card" style={{ maxWidth: 520, marginTop: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>E-mail de acesso</div>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+              ⚠️ Ao trocar, você passará a entrar no sistema com o novo e-mail.
+            </p>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Novo e-mail</label>
+            <input type="email" value={emailForm.novoEmail}
+              onChange={e => setEmailForm(f => ({ ...f, novoEmail: e.target.value }))}
+              placeholder="novo@email.com" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Sua senha atual</label>
+            <input type="password" value={emailForm.senhaAtual}
+              onChange={e => setEmailForm(f => ({ ...f, senhaAtual: e.target.value }))}
+              placeholder="Confirme com sua senha" />
+          </div>
+          {emailErro && <p style={{ color: 'var(--red)', fontSize: 13 }}>{emailErro}</p>}
+          {emailOk && <p style={{ color: 'var(--green)', fontSize: 13 }}>✓ {emailOk}</p>}
+          <button className="btn-secondary" onClick={trocarEmail} disabled={trocandoEmail}
+            style={{ alignSelf: 'flex-start' }}>
+            {trocandoEmail ? 'Trocando...' : 'Trocar e-mail'}
           </button>
         </div>
       </div>
