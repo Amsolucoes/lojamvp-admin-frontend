@@ -47,6 +47,7 @@ export function AdminLojas() {
   const [emailForm, setEmailForm] = useState({ novoEmail: '', trocarLogin: true, trocarLoja: true });
   const [modalValor, setModalValor] = useState<Loja | null>(null);
   const [valorForm, setValorForm] = useState({ novoValor: '', sincronizar: false });
+  const [verificando, setVerificando] = useState(false);
   const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
@@ -166,6 +167,18 @@ async function trocarEmail() {
     finally { setSaving(false); }
   }
 
+  async function verificarBloqueios() {
+    setVerificando(true);
+    try {
+      await api.post('/api/admin/verificar-bloqueios', {});
+      await carregar();
+    } catch (e) {
+      toastErro('Erro ao verificar: ' + (e as Error).message);
+    } finally {
+      setVerificando(false);
+    }
+  }
+
   const lista = lojas.filter(l =>
     l.nome.toLowerCase().includes(busca.toLowerCase()) ||
     l.email.includes(busca) ||
@@ -179,9 +192,14 @@ async function trocarEmail() {
           <h1 className="page-title">Lojas</h1>
           <p className="page-subtitle">{lojas.length} loja(s) cadastrada(s)</p>
         </div>
-        <button className="btn-primary" onClick={() => { setForm(EMPTY_LOJA); setErro(''); setModal('nova'); }}>
-          <Plus size={15} style={{ verticalAlign: -2 }} /> Nova loja
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={verificarBloqueios} disabled={verificando} title="Reavalia o status de todas as lojas (bloqueia inadimplentes)">
+            {verificando ? 'Verificando...' : '🔄 Verificar bloqueios'}
+          </button>
+          <button className="btn-primary" onClick={() => { setForm(EMPTY_LOJA); setErro(''); setModal('nova'); }}>
+            <Plus size={15} style={{ verticalAlign: -2 }} /> Nova loja
+          </button>
+        </div>
       </div>
 
       {(() => {
