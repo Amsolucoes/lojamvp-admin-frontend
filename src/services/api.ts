@@ -101,4 +101,6 @@ export interface DashboardCliente {
   emAtraso: boolean; diasAtraso: number;
   faturaPendente?: Pagamento;
   historicoFaturas: Pagamento[];
+  assinaturaStatus?: string;
+  assinaturaCartaoFinal?: string;
 }

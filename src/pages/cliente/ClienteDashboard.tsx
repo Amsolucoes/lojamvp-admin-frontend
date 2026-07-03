@@ -3,6 +3,10 @@ import { CreditCard, CheckCircle, AlertTriangle, Clock, X } from 'lucide-react';
 import { api, DashboardCliente, Pagamento } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
+declare global {
+  interface Window { MercadoPago?: any; }
+}
+
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function fmtData(s?: string) { return s ? new Date(s).toLocaleDateString('pt-BR') : '—'; }
 
@@ -17,6 +21,10 @@ export function ClienteDashboard() {
   const [erro, setErro]           = useState('');
   const [cpf, setCpf]             = useState('');
   const [nome, setNome]           = useState('');
+  const [modalCartao, setModalCartao] = useState(false);
+  const [assinando, setAssinando]     = useState(false);
+  const [cartao, setCartao] = useState({ numero: '', nome: '', validade: '', cvv: '', cpf: '' });
+  const [erroCartao, setErroCartao] = useState('');
   const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
@@ -47,6 +55,77 @@ export function ClienteDashboard() {
       if (res.status === 'approved') { await carregar(); }
     } catch (e) { setErro((e as Error).message); }
     finally { setPagando(false); }
+  }
+
+  async function cancelarAssinatura() {
+    if (!confirm('Cancelar o pagamento automático? A cobrança mensal será interrompida.')) return;
+    setAssinando(true);
+    try {
+      await api.post('/api/pagamentos/assinatura/cancelar', {});
+      await carregar();
+    } catch (e) {
+      toastErro('Erro ao cancelar: ' + (e as Error).message);
+    } finally {
+      setAssinando(false);
+    }
+  }
+
+  async function ativarAssinatura() {
+    setErroCartao('');
+    const { numero, nome, validade, cvv, cpf } = cartao;
+    if (!numero || !nome || !validade || !cvv || !cpf) {
+      setErroCartao('Preencha todos os campos do cartão.');
+      return;
+    }
+    const [mes, ano] = validade.split('/').map(s => s.trim());
+    if (!mes || !ano) { setErroCartao('Validade no formato MM/AA.'); return; }
+
+    const pubKey = import.meta.env.VITE_MP_PUBLIC_KEY;
+      if (!window.MercadoPago || !pubKey) {
+        setErroCartao('SDK do Mercado Pago não carregado. Recarregue a página.');
+        return;
+      }
+
+      setAssinando(true);
+      try {
+        const mp = new window.MercadoPago(pubKey);
+        const anoCompleto = ano.length === 2 ? '20' + ano : ano;
+
+        // Cria o token do cartão (dados vão direto pro MP, não pro nosso servidor)
+        const token = await mp.createCardToken({
+          cardNumber: numero.replace(/\s/g, ''),
+          cardholderName: nome,
+          cardExpirationMonth: mes,
+          cardExpirationYear: anoCompleto,
+          securityCode: cvv,
+          identificationType: 'CPF',
+          identificationNumber: cpf.replace(/\D/g, ''),
+        });
+
+        if (!token?.id) {
+          setErroCartao('Não foi possível validar o cartão. Confira os dados.');
+          setAssinando(false);
+          return;
+        }
+
+        // Envia só o token pro backend criar a assinatura
+        await api.post('/api/pagamentos/assinatura', {
+          cardToken: token.id,
+          cpfPagador: cpf.replace(/\D/g, ''),
+          nomePagador: nome,
+          emailPagador: null,
+          cartaoFinal: numero.replace(/\s/g, '').slice(-4),
+        });
+
+        setModalCartao(false);
+        setCartao({ numero: '', nome: '', validade: '', cvv: '', cpf: '' });
+        await carregar();
+      } catch (e: any) {
+        const msg = e?.message || (Array.isArray(e) ? e[0]?.description : '') || 'Erro ao processar o cartão.';
+        setErroCartao(msg);
+      } finally {
+        setAssinando(false);
+    }
   }
 
   async function verificarPagamento() {
@@ -98,6 +177,36 @@ export function ClienteDashboard() {
           {data.faturaPendente && (
             <button className="btn-primary" onClick={() => abrirPagamento(data.faturaPendente!)}>
               <CreditCard size={15} style={{ verticalAlign: -2 }} /> Pagar {fmt(data.faturaPendente.valor)}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Pagamento automático (assinatura recorrente) */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <CreditCard size={26} style={{ color: 'var(--accent)' }} />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Pagamento automático</div>
+              {data.assinaturaStatus === 'authorized' ? (
+                <div style={{ fontSize: 13, color: 'var(--green)', marginTop: 2 }}>
+                  ✓ Ativo — cartão final {data.assinaturaCartaoFinal ?? '****'} · cobrança todo mês
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
+                  Cadastre um cartão e a mensalidade é cobrada automaticamente todo mês.
+                </div>
+              )}
+            </div>
+          </div>
+          {data.assinaturaStatus === 'authorized' ? (
+            <button className="btn-secondary" style={{ color: 'var(--red)' }} onClick={cancelarAssinatura} disabled={assinando}>
+              {assinando ? 'Processando...' : 'Cancelar'}
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={() => setModalCartao(true)}>
+              <CreditCard size={15} style={{ verticalAlign: -2 }} /> Ativar cartão automático
             </button>
           )}
         </div>
@@ -249,6 +358,67 @@ export function ClienteDashboard() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal cartão automático */}
+      {modalCartao && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalCartao(false)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Ativar pagamento automático</h2>
+              <button className="btn-ghost" onClick={() => setModalCartao(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+                Cadastre seu cartão de crédito. A mensalidade de {fmt(data.mensalidadeValor)} será cobrada automaticamente todo mês. Você pode cancelar quando quiser.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div className="form-group">
+                  <label className="form-label">Número do cartão</label>
+                  <input value={cartao.numero} inputMode="numeric"
+                    onChange={e => setCartao(c => ({ ...c, numero: e.target.value }))}
+                    placeholder="0000 0000 0000 0000" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nome no cartão</label>
+                  <input value={cartao.nome}
+                    onChange={e => setCartao(c => ({ ...c, nome: e.target.value }))}
+                    placeholder="Como impresso no cartão" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 12 }}>
+                  <div className="form-group">
+                    <label className="form-label">Validade</label>
+                    <input value={cartao.validade} inputMode="numeric"
+                      onChange={e => setCartao(c => ({ ...c, validade: e.target.value }))}
+                      placeholder="MM/AA" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">CVV</label>
+                    <input value={cartao.cvv} inputMode="numeric"
+                      onChange={e => setCartao(c => ({ ...c, cvv: e.target.value }))}
+                      placeholder="000" />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CPF do titular</label>
+                  <input value={cartao.cpf} inputMode="numeric"
+                    onChange={e => setCartao(c => ({ ...c, cpf: e.target.value }))}
+                    placeholder="000.000.000-00" />
+                </div>
+              </div>
+              {erroCartao && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 12 }}>{erroCartao}</p>}
+              <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                🔒 Seus dados são processados com segurança pelo Mercado Pago.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalCartao(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={ativarAssinatura} disabled={assinando}>
+                {assinando ? 'Processando...' : 'Ativar assinatura'}
+              </button>
+            </div>
           </div>
         </div>
       )}
