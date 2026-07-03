@@ -549,6 +549,51 @@ async function trocarEmail() {
           </div>
         </div>
       )}
+
+      {/* Modal trocar e-mail */}
+      {modalEmail && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalEmail(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Trocar e-mail</h2>
+              <button className="btn-ghost" onClick={() => setModalEmail(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 600 }}>{modalEmail.nome}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>E-mail atual: {modalEmail.email}</div>
+              </div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Novo e-mail</label>
+                <input type="email" value={emailForm.novoEmail}
+                  onChange={e => setEmailForm(f => ({ ...f, novoEmail: e.target.value }))}
+                  placeholder="novo@email.com" autoFocus />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={emailForm.trocarLogin}
+                    style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+                    onChange={e => setEmailForm(f => ({ ...f, trocarLogin: e.target.checked }))} />
+                  <span>Trocar e-mail de <strong>login</strong> (com que o cliente entra no sistema)</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={emailForm.trocarLoja}
+                    style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+                    onChange={e => setEmailForm(f => ({ ...f, trocarLoja: e.target.checked }))} />
+                  <span>Trocar e-mail de <strong>contato/cobrança</strong> da loja</span>
+                </label>
+              </div>
+              {erro && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 12 }}>{erro}</p>}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalEmail(null)}>Cancelar</button>
+              <button className="btn-primary" onClick={trocarEmail} disabled={saving}>
+                {saving ? 'Salvando...' : 'Trocar e-mail'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
