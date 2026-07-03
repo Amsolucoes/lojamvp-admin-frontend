@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -43,6 +43,8 @@ export function AdminLojas() {
   const [saving, setSaving]   = useState(false);
   const [modalDel, setModalDel] = useState<Loja | null>(null);
   const [confirmaNome, setConfirmaNome] = useState('');
+  const [modalEmail, setModalEmail] = useState<Loja | null>(null);
+  const [emailForm, setEmailForm] = useState({ novoEmail: '', trocarLogin: true, trocarLoja: true });
   const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
@@ -115,6 +117,19 @@ async function deletarLoja() {
     } finally {
       setSaving(false);
     }
+  }
+
+async function trocarEmail() {
+    if (!modalEmail) return;
+    if (!emailForm.novoEmail.trim()) { setErro('Informe o novo e-mail.'); return; }
+    if (!emailForm.trocarLogin && !emailForm.trocarLoja) { setErro('Escolha ao menos um e-mail para trocar.'); return; }
+    setSaving(true); setErro('');
+    try {
+      await api.patch(`/api/admin/lojas/${modalEmail.id}/email`, emailForm);
+      await carregar();
+      setModalEmail(null);
+    } catch (e) { setErro((e as Error).message); }
+    finally { setSaving(false); }
   }
 
  async function acessarLoja(loja: Loja) {
@@ -239,6 +254,7 @@ async function deletarLoja() {
                           }
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                           <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                          <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                           <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                         </div>
                       </td>
@@ -315,6 +331,7 @@ async function deletarLoja() {
                     }
                     <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                     <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                    <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                     <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                   </div>
                 </div>
