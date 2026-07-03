@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -45,6 +45,8 @@ export function AdminLojas() {
   const [confirmaNome, setConfirmaNome] = useState('');
   const [modalEmail, setModalEmail] = useState<Loja | null>(null);
   const [emailForm, setEmailForm] = useState({ novoEmail: '', trocarLogin: true, trocarLoja: true });
+  const [modalValor, setModalValor] = useState<Loja | null>(null);
+  const [valorForm, setValorForm] = useState({ novoValor: '', sincronizar: false });
   const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
@@ -145,6 +147,23 @@ async function trocarEmail() {
     } catch (e) {
       toastErro('Erro ao acessar loja: ' + (e as Error).message);
     }
+  }
+
+  async function atualizarValor() {
+    if (!modalValor) return;
+    const valor = parseFloat(valorForm.novoValor);
+    if (!valor || valor <= 0) { setErro('Informe um valor válido.'); return; }
+    setSaving(true); setErro('');
+    try {
+      const res = await api.patch<any>(`/api/admin/lojas/${modalValor.id}/valor`, {
+        novoValor: valor,
+        sincronizarAssinatura: valorForm.sincronizar,
+      });
+      await carregar();
+      setModalValor(null);
+      if (res.aviso) toastErro(res.aviso);
+    } catch (e) { setErro((e as Error).message); }
+    finally { setSaving(false); }
   }
 
   const lista = lojas.filter(l =>
@@ -255,6 +274,7 @@ async function trocarEmail() {
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                           <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
+                          <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
                           <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                         </div>
                       </td>
@@ -332,6 +352,7 @@ async function trocarEmail() {
                     <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                     <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                     <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
+                    <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
                     <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
                   </div>
                 </div>
@@ -589,6 +610,55 @@ async function trocarEmail() {
               <button className="btn-secondary" onClick={() => setModalEmail(null)}>Cancelar</button>
               <button className="btn-primary" onClick={trocarEmail} disabled={saving}>
                 {saving ? 'Salvando...' : 'Trocar e-mail'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal alterar valor */}
+      {modalValor && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalValor(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Alterar valor da mensalidade</h2>
+              <button className="btn-ghost" onClick={() => setModalValor(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 600 }}>{modalValor.nome}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                  Valor atual: {fmt(modalValor.mensalidadeValor)}
+                  {modalValor.assinaturaStatus === 'authorized' && (
+                    <span style={{ marginLeft: 8, color: 'var(--green)' }}>· assinatura ativa</span>
+                  )}
+                </div>
+              </div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Novo valor (R$)</label>
+                <input type="number" min={0} step={0.01} value={valorForm.novoValor}
+                  onChange={e => setValorForm(f => ({ ...f, novoValor: e.target.value }))}
+                  placeholder="0,00" autoFocus />
+              </div>
+              {modalValor.assinaturaStatus === 'authorized' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={valorForm.sincronizar}
+                    style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+                    onChange={e => setValorForm(f => ({ ...f, sincronizar: e.target.checked }))} />
+                  <span>Atualizar também a assinatura recorrente no Mercado Pago</span>
+                </label>
+              )}
+              <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 12 }}>
+                {modalValor.assinaturaStatus === 'authorized'
+                  ? 'Sem marcar a opção acima, o novo valor vale só para as próximas faturas manuais (Pix). A assinatura continua no valor atual.'
+                  : 'O novo valor será usado nas próximas faturas.'}
+              </p>
+              {erro && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 12 }}>{erro}</p>}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalValor(null)}>Cancelar</button>
+              <button className="btn-primary" onClick={atualizarValor} disabled={saving}>
+                {saving ? 'Salvando...' : 'Alterar valor'}
               </button>
             </div>
           </div>

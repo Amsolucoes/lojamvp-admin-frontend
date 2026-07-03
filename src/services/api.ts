@@ -74,6 +74,8 @@ export interface Loja {
   tipoPlano?: string;
   modulosAtivos?: string;
   ehTeste?: boolean;
+  assinaturaStatus?: string;
+  assinaturaCartaoFinal?: string;
 }
 
 export interface Pagamento {
