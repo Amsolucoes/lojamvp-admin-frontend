@@ -17,11 +17,25 @@ export function ClienteConfig() {
   const [trocandoEmail, setTrocandoEmail] = useState(false);
   const [emailOk, setEmailOk] = useState('');
   const [emailErro, setEmailErro] = useState('');
+  const [agConfig, setAgConfig] = useState({ ativo: false, confirmacao: 'aprovacao', slug: '' });
+  const [salvandoAg, setSalvandoAg] = useState(false);
+  const [agOk, setAgOk] = useState('');
+  const [agErro, setAgErro] = useState('');
 
   useEffect(() => {
     api.get<any>('/api/cliente/config').then(res => {
       setForm({ nome: res.nome, corPrimaria: res.corPrimaria, logoUrl: res.logoUrl ?? '' });
     }).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.get<any>('/api/loja/situacao').then(res => {
+      setAgConfig({
+        ativo: res.agendamentoOnlineAtivo ?? false,
+        confirmacao: res.agendamentoOnlineConfirmacao ?? 'aprovacao',
+        slug: res.slug ?? '',
+      });
+    }).catch(() => {});
   }, []);
 
   async function uploadLogo(file: File) {
@@ -67,6 +81,33 @@ export function ClienteConfig() {
       setTimeout(() => setOk(false), 3000);
     } catch (e) { setErro((e as Error).message); }
     finally { setSaving(false); }
+  }
+
+  async function salvarAgendamento() {
+    setAgErro(''); setAgOk('');
+    if (agConfig.ativo && !agConfig.slug.trim()) {
+      setAgErro('Defina um link (slug) antes de ativar.');
+      return;
+    }
+    setSalvandoAg(true);
+    try {
+      const res = await api.patch<any>('/api/loja/agendamento-online', {
+        ativo: agConfig.ativo,
+        confirmacao: agConfig.confirmacao,
+        slug: agConfig.slug.trim() || null,
+      });
+      setAgConfig({
+        ativo: res.agendamentoOnlineAtivo,
+        confirmacao: res.agendamentoOnlineConfirmacao,
+        slug: res.slug ?? '',
+      });
+      setAgOk('Configuração salva!');
+      setTimeout(() => setAgOk(''), 3000);
+    } catch (e) {
+      setAgErro((e as Error).message);
+    } finally {
+      setSalvandoAg(false);
+    }
   }
 
   if (loading) return <div className="page"><div className="layout-loading"><div className="spinner" /></div></div>;
@@ -174,6 +215,67 @@ export function ClienteConfig() {
           <button className="btn-secondary" onClick={trocarEmail} disabled={trocandoEmail}
             style={{ alignSelf: 'flex-start' }}>
             {trocandoEmail ? 'Trocando...' : 'Trocar e-mail'}
+          </button>
+        </div>
+      </div>
+
+      {/* Agendamento online */}
+      <div className="card" style={{ maxWidth: 520, marginTop: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>Agendamento online</div>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+              Deixe seus clientes agendarem sozinhos por um link. Divulgue no Instagram, WhatsApp, onde quiser.
+            </p>
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+            <input type="checkbox" checked={agConfig.ativo}
+              style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+              onChange={e => setAgConfig(c => ({ ...c, ativo: e.target.checked }))} />
+            <span>Ativar agendamento online</span>
+          </label>
+
+          <div className="form-group">
+            <label className="form-label">Seu link personalizado</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>app.aldevsoftware.com.br/agendar/</span>
+              <input value={agConfig.slug}
+                onChange={e => setAgConfig(c => ({ ...c, slug: e.target.value }))}
+                placeholder="minha-loja" style={{ flex: 1, minWidth: 140 }} />
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+              Use letras, números e hífens. Ex: banho-da-ana
+            </p>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Quando o cliente agenda</label>
+            <select value={agConfig.confirmacao}
+              onChange={e => setAgConfig(c => ({ ...c, confirmacao: e.target.value }))}>
+              <option value="aprovacao">Preciso aprovar cada agendamento</option>
+              <option value="automatico">Confirmar automaticamente</option>
+            </select>
+          </div>
+
+          {agConfig.ativo && agConfig.slug && (
+            <div style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: 12, wordBreak: 'break-all' }}>
+                app.aldevsoftware.com.br/agendar/{agConfig.slug}
+              </span>
+              <button className="btn-ghost" style={{ flexShrink: 0, fontSize: 12 }}
+                onClick={() => navigator.clipboard.writeText(`https://app.aldevsoftware.com.br/agendar/${agConfig.slug}`)}>
+                Copiar
+              </button>
+            </div>
+          )}
+
+          {agErro && <p style={{ color: 'var(--red)', fontSize: 13 }}>{agErro}</p>}
+          {agOk && <p style={{ color: 'var(--green)', fontSize: 13 }}>✓ {agOk}</p>}
+
+          <button className="btn-primary" onClick={salvarAgendamento} disabled={salvandoAg}
+            style={{ alignSelf: 'flex-start' }}>
+            {salvandoAg ? 'Salvando...' : 'Salvar agendamento online'}
           </button>
         </div>
       </div>
