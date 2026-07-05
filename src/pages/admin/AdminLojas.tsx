@@ -48,9 +48,14 @@ export function AdminLojas() {
   const [modalValor, setModalValor] = useState<Loja | null>(null);
   const [valorForm, setValorForm] = useState({ novoValor: '', sincronizar: false });
   const [verificando, setVerificando] = useState(false);
+  const [perfis, setPerfis] = useState<any[]>([]);
   const { erro: toastErro } = useToast();
 
   useEffect(() => { carregar(); }, []);
+
+  useEffect(() => {
+    api.get<any[]>('/api/perfis').then(setPerfis).catch(() => {});
+  }, []);
 
   async function carregar() {
     setLoading(true);
@@ -425,6 +430,27 @@ async function trocarEmail() {
                   <label className="form-label">Valor mensalidade (R$)</label>
                   <input type="number" min={0} step={0.01} value={form.mensalidadeValor} onChange={e => setForm((f: any) => ({ ...f, mensalidadeValor: +e.target.value }))} />
                 </div>
+                {modal === 'nova' && (
+                  <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                    <label className="form-label">Perfil de serviços <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(traz serviços prontos)</span></label>
+                    <select value={form.perfilId ?? ''} onChange={e => {
+                      const p = perfis.find((x: any) => x.id === e.target.value);
+                      setForm((f: any) => ({
+                        ...f,
+                        perfilId: e.target.value,
+                        // se o perfil define um tipo de plano, aplica junto
+                        tipoPlano: p?.tipoPlanoAplica ?? f.tipoPlano,
+                        modulosAtivos: p?.tipoPlanoAplica === 'servicos' || p?.tipoPlanoAplica === 'loja_modulos' ? 'servicos' : f.modulosAtivos,
+                      }));
+                    }}>
+                      <option value="">Nenhum (começar do zero)</option>
+                      {perfis.map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.icone} {p.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label className="form-label">Tipo de plano</label>
                   <select value={form.tipoPlano ?? 'loja'} onChange={e => setForm((f: any) => ({ ...f, tipoPlano: e.target.value }))}>
