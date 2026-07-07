@@ -49,7 +49,9 @@ export function AdminLojas() {
   const [valorForm, setValorForm] = useState({ novoValor: '', sincronizar: false });
   const [verificando, setVerificando] = useState(false);
   const [perfis, setPerfis] = useState<any[]>([]);
-  const { erro: toastErro } = useToast();
+  const [modalTrial, setModalTrial] = useState(false);
+  const [novaDataTrial, setNovaDataTrial] = useState('');
+  const { erro: toastErro, sucesso: toastSucesso } = useToast();
 
   useEffect(() => { carregar(); }, []);
 
@@ -181,6 +183,21 @@ async function trocarEmail() {
       toastErro('Erro ao verificar: ' + (e as Error).message);
     } finally {
       setVerificando(false);
+    }
+  }
+
+  async function salvarTrial() {
+    if (!novaDataTrial || !selecionada) return;
+    setSaving(true);
+    try {
+      await api.patch(`/api/admin/lojas/${selecionada.id}/trial`, { trialAte: novaDataTrial });
+      await carregar();
+      setModalTrial(false);
+      toastSucesso?.('Trial atualizado!'); // ou seu padrão de toast, se ToastContext estiver disponível aqui
+    } catch (e) {
+      toastErro('Erro ao atualizar trial: ' + (e as Error).message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -368,6 +385,13 @@ async function trocarEmail() {
                       }}>
                       R$ Pgto
                     </button>
+                    <button className="btn-ghost" title="Editar trial" style={{ color: 'var(--blue)' }} onClick={() => {
+                            setSel(l);
+                            setNovaDataTrial(l.trialAte ? l.trialAte.slice(0, 10) : '');
+                            setModalTrial(true);
+                    }}>
+                      📅
+                    </button>
                     {l.status === 'Bloqueado'
                       ? <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={12} /> Ativar</button>
                       : <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={12} /> Bloquear</button>
@@ -384,6 +408,32 @@ async function trocarEmail() {
           </>
         )}
       </div>
+
+      {modalTrial && selecionada && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalTrial(false)}>
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Editar trial — {selecionada.nome}</h2>
+              <button className="btn-ghost" onClick={() => setModalTrial(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Trial válido até</label>
+                <input type="date" value={novaDataTrial} onChange={e => setNovaDataTrial(e.target.value)} />
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
+                Se a loja estiver bloqueada, ela volta para o status "Trial" automaticamente.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalTrial(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={salvarTrial} disabled={saving || !novaDataTrial}>
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal nova/editar loja */}
       {(modal === 'nova' || modal === 'editar') && (
