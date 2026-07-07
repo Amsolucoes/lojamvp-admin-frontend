@@ -302,6 +302,11 @@ async function trocarEmail() {
                               , mensalidadeDia: l.mensalidadeDia, mensalidadeValor: l.mensalidadeValor, tipoPlano: l.tipoPlano ?? 'loja', modulosAtivos: l.modulosAtivos ?? '', ehTeste:  l.ehTeste ?? false});
                             setErro(''); setModal('editar');
                           }}><Edit2 size={13} /></button>
+                          <button className="btn-ghost" title="Editar trial" style={{ color: 'var(--blue)' }} onClick={() => {
+                            setSel(l);
+                            setNovaDataTrial(l.trialAte ? l.trialAte.slice(0, 10) : '');
+                            setModalTrial(true);
+                          }}>📅</button>
                           <button className="btn-ghost" title="Registrar pagamento" style={{ color: 'var(--green)' }} onClick={() => {
                             setSel(l);
                             setPagForm({ valor: String(l.mensalidadeValor), vencimento: new Date().toISOString().slice(0,10), pagoEm: new Date().toISOString().slice(0,10), forma: 'pix', obs: '' });
