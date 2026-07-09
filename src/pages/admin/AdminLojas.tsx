@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign, MoreVertical } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -51,6 +51,7 @@ export function AdminLojas() {
   const [perfis, setPerfis] = useState<any[]>([]);
   const [modalTrial, setModalTrial] = useState(false);
   const [novaDataTrial, setNovaDataTrial] = useState('');
+  const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
 
   useEffect(() => { carregar(); }, []);
@@ -330,6 +331,9 @@ async function trocarEmail() {
             </div>
 
             {/* Cards — mobile */}
+            {menuAberto && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuAberto(null)} />
+            )}
             <div className="admin-cards-mobile">
               {lista.map(l => (
                 <div key={l.id} className="admin-card-mobile">
@@ -372,7 +376,7 @@ async function trocarEmail() {
                       <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, position: 'relative' }}>
                     <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0' }}
                       onClick={() => {
                         setSel(l);
@@ -390,22 +394,35 @@ async function trocarEmail() {
                       }}>
                       R$ Pgto
                     </button>
-                    <button className="btn-ghost" title="Editar trial" style={{ color: 'var(--blue)' }} onClick={() => {
-                            setSel(l);
+                    {l.status === 'Bloqueado'
+                      ? <button className="btn-ghost" title="Ativar" style={{ color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={15} /></button>
+                      : <button className="btn-ghost" title="Bloquear" style={{ color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={15} /></button>
+                    }
+                    <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={15} /></button>
+                    <button className="btn-ghost" title="Mais ações" onClick={() => setMenuAberto(menuAberto === l.id ? null : l.id)}><MoreVertical size={15} /></button>
+
+                    {menuAberto === l.id && (
+                      <div style={{
+                        position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 50,
+                        background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8,
+                        boxShadow: 'var(--shadow-lg)', minWidth: 190, overflow: 'hidden',
+                      }}>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left' }}
+                          onClick={() => {
+                            setMenuAberto(null); setSel(l);
                             setNovaDataTrial(l.trialAte ? l.trialAte.slice(0, 10) : '');
                             setModalTrial(true);
-                    }}>
-                      📅
-                    </button>
-                    {l.status === 'Bloqueado'
-                      ? <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={12} /> Ativar</button>
-                      : <button className="btn-secondary" style={{ flex: 1, fontSize: 12, padding: '7px 0', color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={12} /> Bloquear</button>
-                    }
-                    <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
-                    <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
-                    <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
-                    <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
-                    <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
+                          }}>📅 Editar trial</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); fazerBackup(l); }}><Download size={14} /> Backup</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={14} /> Trocar e-mail</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={14} /> Alterar valor</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', color: 'var(--red)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalDel(l); setConfirmaNome(''); }}><Trash2 size={14} /> Deletar</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
