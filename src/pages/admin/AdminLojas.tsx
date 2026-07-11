@@ -22,6 +22,7 @@ const EMPTY_LOJA = {
 
 const MODULOS_LABEL: Record<string, string> = {
   servicos: '🗓️ Serviços',
+  financeiro: '💰 Financeiro',
   etiquetas: '🏷️ Etiquetas',
   nf: '📄 NF',
 };
@@ -268,6 +269,7 @@ async function trocarEmail() {
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
                           {l.ehTeste && <span className="badge badge-yellow" style={{ fontSize: 10 }}>🧪 Teste</span>}
                           {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
+                          {l.tipoPlano === 'financeiro' && <span className="badge badge-blue" style={{ fontSize: 10 }}>💰 Financeiro puro</span>}
                           {badgesModulos(l.modulosAtivos).map(m => (
                             <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
                           ))}
@@ -344,6 +346,7 @@ async function trocarEmail() {
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
                         {l.ehTeste && <span className="badge badge-yellow" style={{ fontSize: 10 }}>🧪 Teste</span>}
                         {l.tipoPlano === 'servicos' && <span className="badge badge-blue" style={{ fontSize: 10 }}>Plano Serviços</span>}
+                        {l.tipoPlano === 'financeiro' && <span className="badge badge-blue" style={{ fontSize: 10 }}>💰 Financeiro puro</span>}
                         {badgesModulos(l.modulosAtivos).map(m => (
                           <span key={m} className="badge badge-accent" style={{ fontSize: 10 }}>{MODULOS_LABEL[m] ?? m}</span>
                         ))}
