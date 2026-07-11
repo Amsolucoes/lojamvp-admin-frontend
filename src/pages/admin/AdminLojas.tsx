@@ -529,6 +529,7 @@ async function trocarEmail() {
                     <option value="loja">Loja (sistema completo)</option>
                     <option value="loja_modulos">Loja + Módulos</option>
                     <option value="servicos">Serviços (banho e tosa puro)</option>
+                    <option value="financeiro">Financeiro puro (R$39,90) — contas pessoais/negócio</option>
                   </select>
                 </div>
 
@@ -537,6 +538,7 @@ async function trocarEmail() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                     {[
                       { chave: 'servicos', nome: 'Serviços e Agenda', ativo: true },
+                      { chave: 'financeiro', nome: 'Financeiro (Contas a Pagar/Receber) — +R$29,90', ativo: true },
                       { chave: 'etiquetas', nome: 'Impressão de etiquetas', ativo: false },
                       { chave: 'nf', nome: 'Importação de NF', ativo: false },
                     ].map(mod => {
