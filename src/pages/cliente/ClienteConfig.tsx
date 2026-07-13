@@ -22,6 +22,10 @@ export function ClienteConfig() {
   const [agOk, setAgOk] = useState('');
   const [agErro, setAgErro] = useState('');
   const [temServicos, setTemServicos] = useState(false);
+  const [modulosAtivos, setModulosAtivos] = useState<string[]>([]);
+  const [modulosDisponiveis, setModulosDisponiveis] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
+  const [alternandoModulo, setAlternandoModulo] = useState<string | null>(null);
+  const [confirmDesativar, setConfirmDesativar] = useState<{ chave: string; nome: string } | null>(null);
 
   useEffect(() => {
     api.get<any>('/api/cliente/config').then(res => {
@@ -37,7 +41,10 @@ export function ClienteConfig() {
         slug: res.slug ?? '',
       });
       setTemServicos((res.modulosAtivos ?? []).includes('servicos'));
+      setModulosAtivos(res.modulosAtivos ?? []);
     }).catch(() => {});
+
+    api.get<any[]>('/api/modulos-preco').then(setModulosDisponiveis).catch(() => {});
   }, []);
 
   async function uploadLogo(file: File) {
@@ -110,6 +117,23 @@ export function ClienteConfig() {
     } finally {
       setSalvandoAg(false);
     }
+  }
+
+  async function alternarModulo(chave: string, nome: string, ativar: boolean) {
+    setAlternandoModulo(chave);
+    try {
+      const res = await api.patch<any>('/api/loja/modulos', { chave, ativar });
+      setModulosAtivos((res.modulosAtivos ?? '').split(',').filter(Boolean));
+      setConfirmDesativar(null);
+    } catch (e) {
+      alert('Erro: ' + (e as Error).message); // substitua por seu padrão de toast se preferir
+    } finally {
+      setAlternandoModulo(null);
+    }
+  }
+
+  function pedirDesativacao(chave: string, nome: string) {
+    setConfirmDesativar({ chave, nome });
   }
 
   if (loading) return <div className="page"><div className="layout-loading"><div className="spinner" /></div></div>;
@@ -283,6 +307,68 @@ export function ClienteConfig() {
           </div>
         </div>
         )}
+
+      {/* Módulos */}
+      <div className="card" style={{ maxWidth: 520, marginTop: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>Módulos</div>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+              Ative recursos extras para sua loja. O valor entra na sua próxima fatura.
+            </p>
+          </div>
+
+          {modulosDisponiveis.filter(m => m.disponivelParaAtivar).map(m => {
+            const ativo = modulosAtivos.includes(m.chave);
+            return (
+              <div key={m.chave} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 14 }}>{m.nome}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{m.valor > 0 ? `+R$${m.valor.toFixed(2).replace('.', ',')}/mês` : 'Incluso'}</div>
+                </div>
+                {ativo ? (
+                  <button className="btn-secondary" style={{ fontSize: 12 }}
+                    disabled={alternandoModulo === m.chave}
+                    onClick={() => pedirDesativacao(m.chave, m.nome)}>
+                    Ativo — desativar
+                  </button>
+                ) : (
+                  <button className="btn-primary" style={{ fontSize: 12 }}
+                    disabled={alternandoModulo === m.chave}
+                    onClick={() => alternarModulo(m.chave, m.nome, true)}>
+                    {alternandoModulo === m.chave ? 'Ativando...' : 'Ativar'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Confirmar desativação */}
+      {confirmDesativar && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDesativar(null)}>
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Desativar módulo</h2>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.7 }}>
+                Tem certeza que deseja desativar <strong style={{ color: 'var(--text-1)' }}>{confirmDesativar.nome}</strong>?
+                Você perde acesso às telas e funções desse módulo imediatamente. Os dados já cadastrados não são apagados, mas ficam inacessíveis até reativar.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setConfirmDesativar(null)}>Cancelar</button>
+              <button className="btn-danger"
+                disabled={alternandoModulo === confirmDesativar.chave}
+                onClick={() => alternarModulo(confirmDesativar.chave, confirmDesativar.nome, false)}>
+                {alternandoModulo === confirmDesativar.chave ? 'Desativando...' : 'Desativar mesmo assim'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
