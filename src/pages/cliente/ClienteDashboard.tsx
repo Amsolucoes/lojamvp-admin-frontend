@@ -15,7 +15,7 @@ export function ClienteDashboard() {
   const [loading, setLoading]     = useState(true);
   const [modalPag, setModalPag]   = useState(false);
   const [fatura, setFatura]       = useState<Pagamento | null>(null);
-  const [forma, setForma]         = useState<'pix' | 'boleto' | 'cartao'>('pix');
+  const forma = 'pix' as const;
   const [resultado, setResultado] = useState<any>(null);
   const [pagando, setPagando]     = useState(false);
   const [erro, setErro]           = useState('');
@@ -36,7 +36,7 @@ export function ClienteDashboard() {
   }
 
   function abrirPagamento(f: Pagamento) {
-    setFatura(f); setResultado(null); setErro(''); setForma('pix'); setModalPag(true);
+    setFatura(f); setResultado(null); setErro(''); setModalPag(true);
   }
 
   async function pagar() {
@@ -287,14 +287,9 @@ export function ClienteDashboard() {
             <div className="modal-body">
               {!resultado ? (
                 <>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                    {(['pix', 'boleto', 'cartao'] as const).map(f => (
-                      <button key={f} onClick={() => setForma(f)}
-                        className={forma === f ? 'btn-primary' : 'btn-secondary'}
-                        style={{ flex: 1, padding: '8px 0' }}>
-                        {f === 'pix' ? '⚡ Pix' : f === 'boleto' ? '🏦 Boleto' : '💳 Cartão'}
-                      </button>
-                    ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '10px 14px', background: 'var(--bg-3)', borderRadius: 8 }}>
+                    <span style={{ fontSize: 20 }}>⚡</span>
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>Pagamento via Pix</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div className="form-group">
