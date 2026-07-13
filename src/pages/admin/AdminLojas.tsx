@@ -27,6 +27,15 @@ const MODULOS_LABEL: Record<string, string> = {
   etiquetas: '🏷️ Etiquetas',
   nf: '📄 NF',
 };
+
+// Valor base de cada tipo de plano (referência p/ cálculo automático — sempre editável depois)
+const BASE_PLANO: Record<string, number> = {
+  loja: 89.90,
+  loja_modulos: 89.90,
+  servicos: 79.90,
+  financeiro: 39.90,
+};
+
 function badgesModulos(modulosAtivos?: string) {
   if (!modulosAtivos) return [];
   return modulosAtivos.split(',').map(m => m.trim()).filter(Boolean);
@@ -54,6 +63,11 @@ export function AdminLojas() {
   const [novaDataTrial, setNovaDataTrial] = useState('');
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
+  const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
+
+  useEffect(() => {
+    api.get<any[]>('/api/modulos-preco').then(setModulosPreco).catch(() => {});
+  }, []);
 
   useEffect(() => { carregar(); }, []);
 
@@ -201,6 +215,15 @@ async function trocarEmail() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function recalcularMensalidade(tipoPlano: string, modulosAtivosStr: string) {
+    const base = BASE_PLANO[tipoPlano] ?? 0;
+    const chavesAtivas = modulosAtivosStr.split(',').map(s => s.trim()).filter(Boolean);
+    const somaModulos = modulosPreco
+      .filter(m => chavesAtivas.includes(m.chave))
+      .reduce((s, m) => s + m.valor, 0);
+    return +(base + somaModulos).toFixed(2);
   }
 
   const lista = lojas.filter(l =>
@@ -528,7 +551,11 @@ async function trocarEmail() {
 
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label className="form-label">Tipo de plano</label>
-                  <select value={form.tipoPlano ?? 'loja'} onChange={e => setForm((f: any) => ({ ...f, tipoPlano: e.target.value }))}>
+                  <select value={form.tipoPlano ?? 'loja'} onChange={e => {
+                    const novoTipo = e.target.value;
+                    const novaMensalidade = recalcularMensalidade(novoTipo, form.modulosAtivos ?? '');
+                    setForm((f: any) => ({ ...f, tipoPlano: novoTipo, mensalidadeValor: novaMensalidade }));
+                  }}>
                     <option value="loja">Loja (sistema completo)</option>
                     <option value="loja_modulos">Loja + Módulos</option>
                     <option value="servicos">Serviços (banho e tosa puro)</option>
@@ -539,27 +566,23 @@ async function trocarEmail() {
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label className="form-label">Módulos ativos</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                    {[
-                      { chave: 'servicos', nome: 'Serviços e Agenda', ativo: true },
-                      { chave: 'financeiro', nome: 'Financeiro (Contas a Pagar/Receber) — +R$29,90', ativo: true },
-                      { chave: 'turmas', nome: 'Turmas (aulas em grupo) — +R$39,90', ativo: true },
-                      { chave: 'etiquetas', nome: 'Impressão de etiquetas', ativo: false },
-                      { chave: 'nf', nome: 'Importação de NF', ativo: false },
-                    ].map(mod => {
+                    {modulosPreco.map(mod => {
                       const lista = (form.modulosAtivos ?? '').split(',').map((m: string) => m.trim()).filter(Boolean);
                       const marcado = lista.includes(mod.chave);
                       return (
-                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.ativo ? 'pointer' : 'not-allowed', opacity: mod.ativo ? 1 : 0.5, lineHeight: 1.2 }}>
-                          <input type="checkbox" checked={marcado} disabled={!mod.ativo}
+                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.disponivelParaAtivar ? 'pointer' : 'not-allowed', opacity: mod.disponivelParaAtivar ? 1 : 0.5, lineHeight: 1.2 }}>
+                          <input type="checkbox" checked={marcado} disabled={!mod.disponivelParaAtivar}
                             style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
                             onChange={e => {
                               let nova = lista.filter((m: string) => m !== mod.chave);
                               if (e.target.checked) nova.push(mod.chave);
-                              setForm((f: any) => ({ ...f, modulosAtivos: nova.join(',') }));
+                              const novaStr = nova.join(',');
+                              const novaMensalidade = recalcularMensalidade(form.tipoPlano ?? 'loja', novaStr);
+                              setForm((f: any) => ({ ...f, modulosAtivos: novaStr, mensalidadeValor: novaMensalidade }));
                             }} />
                           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {mod.nome}
-                            {!mod.ativo && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
+                            {mod.nome}{mod.valor > 0 ? ` — +R$${mod.valor.toFixed(2).replace('.', ',')}` : ''}
+                            {!mod.disponivelParaAtivar && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
                           </span>
                         </label>
                       );
