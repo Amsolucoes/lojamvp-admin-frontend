@@ -23,10 +23,10 @@ const EMPTY_LOJA = {
 const MODULOS_LABEL: Record<string, string> = {
   servicos: '🗓️ Serviços',
   financeiro: '💰 Financeiro',
+  turmas: '🧘 Turmas',
   etiquetas: '🏷️ Etiquetas',
   nf: '📄 NF',
 };
-
 function badgesModulos(modulosAtivos?: string) {
   if (!modulosAtivos) return [];
   return modulosAtivos.split(',').map(m => m.trim()).filter(Boolean);
@@ -542,6 +542,7 @@ async function trocarEmail() {
                     {[
                       { chave: 'servicos', nome: 'Serviços e Agenda', ativo: true },
                       { chave: 'financeiro', nome: 'Financeiro (Contas a Pagar/Receber) — +R$29,90', ativo: true },
+                      { chave: 'turmas', nome: 'Turmas (aulas em grupo) — +R$39,90', ativo: true },
                       { chave: 'etiquetas', nome: 'Impressão de etiquetas', ativo: false },
                       { chave: 'nf', nome: 'Importação de NF', ativo: false },
                     ].map(mod => {
