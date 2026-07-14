@@ -24,6 +24,7 @@ const MODULOS_LABEL: Record<string, string> = {
   servicos: '🗓️ Serviços',
   financeiro: '💰 Financeiro',
   turmas: '🧘 Turmas',
+  corretora: '📋 Corretora',
   etiquetas: '🏷️ Etiquetas',
   nf: '📄 NF',
 };
