@@ -289,14 +289,14 @@ async function trocarEmail() {
         <input style={{ paddingLeft: 32 }} placeholder="Buscar por nome, e-mail ou CNPJ..." value={busca} onChange={e => setBusca(e.target.value)} />
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
-        <select value={filtroModulo} onChange={e => setFiltroModulo(e.target.value)} style={{ width: 'auto', fontSize: 13 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+        <select value={filtroModulo} onChange={e => setFiltroModulo(e.target.value)} style={{ width: 'auto', minWidth: 160, flex: '0 0 auto', fontSize: 13 }}>
           <option value="todos">Todos os módulos</option>
           {Object.entries(MODULOS_LABEL).map(([chave, label]) => (
             <option key={chave} value={chave}>{label}</option>
           ))}
         </select>
-        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ width: 'auto', fontSize: 13 }}>
+        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ width: 'auto', minWidth: 150, flex: '0 0 auto', fontSize: 13 }}>
           <option value="todos">Todos os status</option>
           <option value="Trial">Trial</option>
           <option value="Ativo">Ativo</option>
