@@ -67,13 +67,16 @@ export function AdminLojas() {
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(15);
+  const [filtroModulo, setFiltroModulo] = useState('todos');
+  const [filtroTeste, setFiltroTeste] = useState<'todos' | 'teste' | 'real'>('todos');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
 
   useEffect(() => {
     api.get<any[]>('/api/modulos-preco').then(setModulosPreco).catch(() => {});
   }, []);
 
   useEffect(() => { carregar(); }, []);
-  useEffect(() => { setPagina(1); }, [busca, porPagina]);
+  useEffect(() => { setPagina(1); }, [busca, porPagina, filtroModulo, filtroTeste, filtroStatus]);
 
   useEffect(() => {
     api.get<any[]>('/api/perfis').then(setPerfis).catch(() => {});
@@ -230,11 +233,19 @@ async function trocarEmail() {
     return +(base + somaModulos).toFixed(2);
   }
 
-  const lista = lojas.filter(l =>
-    l.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    l.email.includes(busca) ||
-    (l.cnpj ?? '').includes(busca)
-  );
+  const lista = lojas.filter(l => {
+    const buscaOk = l.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      l.email.includes(busca) ||
+      (l.cnpj ?? '').includes(busca);
+    if (!buscaOk) return false;
+
+    if (filtroModulo !== 'todos' && !badgesModulos(l.modulosAtivos).includes(filtroModulo)) return false;
+    if (filtroTeste === 'teste' && !l.ehTeste) return false;
+    if (filtroTeste === 'real' && l.ehTeste) return false;
+    if (filtroStatus !== 'todos' && l.status !== filtroStatus) return false;
+
+    return true;
+  });
 
   const totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
   const paginaSegura = Math.min(pagina, totalPaginas);
@@ -245,7 +256,7 @@ async function trocarEmail() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Lojas</h1>
-          <p className="page-subtitle">{lojas.length} loja(s) cadastrada(s)</p>
+          <p className="page-subtitle">{lista.length} de {lojas.length} loja(s)</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn-secondary" onClick={verificarBloqueios} disabled={verificando} title="Reavalia o status de todas as lojas (bloqueia inadimplentes)">
@@ -276,6 +287,32 @@ async function trocarEmail() {
       <div style={{ marginBottom: 16, maxWidth: 320, position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
         <input style={{ paddingLeft: 32 }} placeholder="Buscar por nome, e-mail ou CNPJ..." value={busca} onChange={e => setBusca(e.target.value)} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+        <select value={filtroModulo} onChange={e => setFiltroModulo(e.target.value)} style={{ width: 'auto', fontSize: 13 }}>
+          <option value="todos">Todos os módulos</option>
+          {Object.entries(MODULOS_LABEL).map(([chave, label]) => (
+            <option key={chave} value={chave}>{label}</option>
+          ))}
+        </select>
+        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ width: 'auto', fontSize: 13 }}>
+          <option value="todos">Todos os status</option>
+          <option value="Trial">Trial</option>
+          <option value="Ativo">Ativo</option>
+          <option value="Bloqueado">Bloqueado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+        <div className="cat-tabs">
+          <button className={`cat-tab${filtroTeste === 'todos' ? ' active' : ''}`} onClick={() => setFiltroTeste('todos')}>Todas</button>
+          <button className={`cat-tab${filtroTeste === 'real' ? ' active' : ''}`} onClick={() => setFiltroTeste('real')}>Só reais</button>
+          <button className={`cat-tab${filtroTeste === 'teste' ? ' active' : ''}`} onClick={() => setFiltroTeste('teste')}>Só teste</button>
+        </div>
+        {(filtroModulo !== 'todos' || filtroStatus !== 'todos' || filtroTeste !== 'todos') && (
+          <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => { setFiltroModulo('todos'); setFiltroStatus('todos'); setFiltroTeste('todos'); }}>
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
