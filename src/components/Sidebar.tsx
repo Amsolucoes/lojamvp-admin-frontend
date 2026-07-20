@@ -34,7 +34,7 @@ export function Sidebar() {
       {/* Topbar mobile */}
       <div className="mobile-topbar">
         <div className="sidebar-logo" style={{ padding: 0, border: 'none', margin: 0 }}>
-          <div className="sidebar-logo-icon">⬡</div>
+          <img src="/logo-aldevsoftware-padrao.png" alt="AlDevSoftware" style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', objectFit: 'contain' }} />
           <div className="sidebar-logo-nome">AlSoluções</div>
         </div>
         <button className="btn-ghost" onClick={() => setAberto(v => !v)} style={{ padding: 8 }}>
@@ -48,7 +48,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside className={`sidebar${aberto ? ' sidebar-open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">⬡</div>
+          <img src="/logo-aldevsoftware-padrao.png" alt="AlDevSoftware" style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', objectFit: 'contain' }} />
           <div>
             <div className="sidebar-logo-nome">AlSoluções</div>
             <div className="sidebar-logo-sub">{isSuperAdmin ? 'Super Admin' : 'Minha Conta'}</div>
