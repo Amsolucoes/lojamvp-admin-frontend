@@ -323,6 +323,11 @@ async function trocarEmail() {
                         {l.proximoVencimento ? new Date(l.proximoVencimento).toLocaleDateString('pt-BR') : '—'}
                       </td>
                       <td style={{ fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                        {(l as any).ultimoLoginEm
+                          ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                          : 'nunca'}
+                      </td>
                       <td>
                         {l.emAtraso
                           ? <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
