@@ -303,10 +303,19 @@ async function trocarEmail() {
           <option value="Bloqueado">Bloqueado</option>
           <option value="Cancelado">Cancelado</option>
         </select>
-        <div className="cat-tabs">
-          <button className={`cat-tab${filtroTeste === 'todos' ? ' active' : ''}`} onClick={() => setFiltroTeste('todos')}>Todas</button>
-          <button className={`cat-tab${filtroTeste === 'real' ? ' active' : ''}`} onClick={() => setFiltroTeste('real')}>Só reais</button>
-          <button className={`cat-tab${filtroTeste === 'teste' ? ' active' : ''}`} onClick={() => setFiltroTeste('teste')}>Só teste</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[
+            { v: 'todos', t: 'Todas' },
+            { v: 'real', t: 'Só reais' },
+            { v: 'teste', t: 'Só teste' },
+          ].map(op => (
+            <button key={op.v}
+              className={filtroTeste === op.v ? 'btn-primary' : 'btn-secondary'}
+              style={{ fontSize: 12, padding: '7px 12px' }}
+              onClick={() => setFiltroTeste(op.v as any)}>
+              {op.t}
+            </button>
+          ))}
         </div>
         {(filtroModulo !== 'todos' || filtroStatus !== 'todos' || filtroTeste !== 'todos') && (
           <button className="btn-ghost" style={{ fontSize: 12 }} onClick={() => { setFiltroModulo('todos'); setFiltroStatus('todos'); setFiltroTeste('todos'); }}>
