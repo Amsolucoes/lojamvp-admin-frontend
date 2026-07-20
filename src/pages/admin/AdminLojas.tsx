@@ -65,12 +65,15 @@ export function AdminLojas() {
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(15);
 
   useEffect(() => {
     api.get<any[]>('/api/modulos-preco').then(setModulosPreco).catch(() => {});
   }, []);
 
   useEffect(() => { carregar(); }, []);
+  useEffect(() => { setPagina(1); }, [busca, porPagina]);
 
   useEffect(() => {
     api.get<any[]>('/api/perfis').then(setPerfis).catch(() => {});
@@ -233,6 +236,10 @@ async function trocarEmail() {
     (l.cnpj ?? '').includes(busca)
   );
 
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
+  const paginaSegura = Math.min(pagina, totalPaginas);
+  const listaPaginada = lista.slice((paginaSegura - 1) * porPagina, paginaSegura * porPagina);
+
   return (
     <div className="page">
       <div className="page-header">
@@ -282,10 +289,10 @@ async function trocarEmail() {
             <div className="table-wrap admin-table-desktop">
               <table>
                 <thead>
-                  <tr><th>Loja</th><th>Status</th><th>Próx. Vencimento</th><th>Mensalidade</th><th>Atraso</th><th>Ações</th></tr>
+                  <tr><th>Loja</th><th>Status</th><th>Próx. Vencimento</th><th>Mensalidade</th><th>Último acesso</th><th>Atraso</th><th>Ações</th></tr>
                 </thead>
                 <tbody>
-                  {lista.map(l => (
+                  {listaPaginada.map(l => (
                     <tr key={l.id}>
                       <td>
                         <div style={{ fontWeight: 500 }}>{l.nome}</div>
@@ -361,7 +368,7 @@ async function trocarEmail() {
               <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuAberto(null)} />
             )}
             <div className="admin-cards-mobile">
-              {lista.map(l => (
+              {listaPaginada.map(l => (
                 <div key={l.id} className="admin-card-mobile">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
@@ -398,6 +405,11 @@ async function trocarEmail() {
                     </span>
                     <span style={{ fontWeight: 600 }}>{fmt(l.mensalidadeValor)}/mês</span>
                   </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+                    Último acesso: {(l as any).ultimoLoginEm
+                      ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      : 'nunca acessou'}
+                  </div>
                   {l.emAtraso && (
                     <div style={{ marginTop: 6 }}>
                       <span className="badge badge-yellow">{l.diasAtraso}d atraso</span>
@@ -430,7 +442,7 @@ async function trocarEmail() {
 
                     {menuAberto === l.id && (
                       <div style={{
-                        position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 50,
+                        position: 'absolute', bottom: '100%', right: 0, marginBottom: 6, zIndex: 50,
                         background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8,
                         boxShadow: 'var(--shadow-lg)', minWidth: 190, overflow: 'hidden',
                       }}>
@@ -457,6 +469,25 @@ async function trocarEmail() {
           </>
         )}
       </div>
+
+      {lista.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            Mostrando {(paginaSegura - 1) * porPagina + 1}–{Math.min(paginaSegura * porPagina, lista.length)} de {lista.length}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <select value={porPagina} onChange={e => setPorPagina(+e.target.value)} style={{ width: 'auto', fontSize: 12, padding: '4px 8px' }}>
+              <option value={15}>15 por página</option>
+              <option value={30}>30 por página</option>
+              <option value={50}>50 por página</option>
+              <option value={100}>100 por página</option>
+            </select>
+            <button className="btn-secondary" disabled={paginaSegura <= 1} onClick={() => setPagina(p => Math.max(1, p - 1))} style={{ padding: '4px 10px' }}>Anterior</button>
+            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{paginaSegura} / {totalPaginas}</span>
+            <button className="btn-secondary" disabled={paginaSegura >= totalPaginas} onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} style={{ padding: '4px 10px' }}>Próxima</button>
+          </div>
+        </div>
+      )}
 
       {modalTrial && selecionada && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalTrial(false)}>
