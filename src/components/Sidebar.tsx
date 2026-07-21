@@ -35,7 +35,7 @@ export function Sidebar() {
       <div className="mobile-topbar">
         <div className="sidebar-logo" style={{ padding: 0, border: 'none', margin: 0 }}>
           <img src="/logo-aldevsoftware-padrao.png" alt="AlDevSoftware" style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', objectFit: 'contain' }} />
-          <div className="sidebar-logo-nome">AlSoluções</div>
+          <div className="sidebar-logo-nome">AlDevSoftware</div>
         </div>
         <button className="btn-ghost" onClick={() => setAberto(v => !v)} style={{ padding: 8 }}>
           {aberto ? <X size={20} /> : <Menu size={20} />}
@@ -50,7 +50,7 @@ export function Sidebar() {
         <div className="sidebar-logo">
           <img src="/logo-aldevsoftware-padrao.png" alt="AlDevSoftware" style={{ width: 44, height: 44, borderRadius: 'var(--radius-sm)', objectFit: 'contain' }} />
           <div>
-            <div className="sidebar-logo-nome">AlSoluções</div>
+            <div className="sidebar-logo-nome">AlDevSoftware</div>
             <div className="sidebar-logo-sub">{isSuperAdmin ? 'Super Admin' : 'Minha Conta'}</div>
           </div>
         </div>
