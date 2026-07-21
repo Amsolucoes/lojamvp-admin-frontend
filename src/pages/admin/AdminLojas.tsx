@@ -371,7 +371,7 @@ async function trocarEmail() {
                       <td style={{ fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
                       <td style={{ fontSize: 12, color: 'var(--text-3)' }}>
                         {(l as any).ultimoLoginEm
-                          ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                          ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { timeZone: 'America/Campo_Grande', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                           : 'nunca'}
                       </td>
                       <td>
@@ -458,7 +458,7 @@ async function trocarEmail() {
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
                     Último acesso: {(l as any).ultimoLoginEm
-                      ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      ? new Date((l as any).ultimoLoginEm).toLocaleString('pt-BR', { timeZone: 'America/Campo_Grande', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                       : 'nunca acessou'}
                   </div>
                   {l.emAtraso && (
