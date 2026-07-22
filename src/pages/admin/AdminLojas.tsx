@@ -35,6 +35,8 @@ const BASE_PLANO: Record<string, number> = {
   loja_modulos: 89.90,
   servicos: 79.90,
   financeiro: 39.90,
+  corretora: 89.90,
+  turmas: 89.90,
 };
 
 function badgesModulos(modulosAtivos?: string) {
@@ -643,6 +645,8 @@ async function trocarEmail() {
                     <option value="loja_modulos">Loja + Módulos</option>
                     <option value="servicos">Serviços (banho e tosa puro)</option>
                     <option value="financeiro">Financeiro puro (R$39,90) — contas pessoais/negócio</option>
+                    <option value="corretora">Corretora (sem loja)</option>
+                    <option value="turmas">Turmas / Pilates (sem loja)</option>
                   </select>
                 </div>
 
