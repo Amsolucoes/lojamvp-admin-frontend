@@ -37,6 +37,7 @@ const BASE_PLANO: Record<string, number> = {
   financeiro: 39.90,
   corretora: 89.90,
   turmas: 89.90,
+  chacara:  89.90,
 };
 
 function badgesModulos(modulosAtivos?: string) {
@@ -623,7 +624,10 @@ async function trocarEmail() {
                         perfilId: e.target.value,
                         // se o perfil define um tipo de plano, aplica junto
                         tipoPlano: p?.tipoPlanoAplica ?? f.tipoPlano,
-                        modulosAtivos: p?.tipoPlanoAplica === 'servicos' || p?.tipoPlanoAplica === 'loja_modulos' ? 'servicos' : f.modulosAtivos,
+                        modulosAtivos:
+                          p?.tipoPlanoAplica === 'servicos' || p?.tipoPlanoAplica === 'loja_modulos' ? 'servicos'
+                          : p?.tipoPlanoAplica === 'chacara' ? 'chacara_reservas'
+                          : f.modulosAtivos,
                       }));
                     }}>
                       <option value="">Nenhum (começar do zero)</option>
@@ -647,6 +651,7 @@ async function trocarEmail() {
                     <option value="financeiro">Financeiro puro (R$39,90) — contas pessoais/negócio</option>
                     <option value="corretora">Corretora (sem loja)</option>
                     <option value="turmas">Turmas / Pilates (sem loja)</option>
+                    <option value="chacara">Chácara / Temporada (sem loja)</option>
                   </select>
                 </div>
 
