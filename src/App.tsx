@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/login/Login';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLojas } from './pages/admin/AdminLojas';
+import { AdminVideosAjuda } from './pages/admin/AdminVideosAjuda';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
 import { ClienteConfig } from './pages/cliente/ClienteConfig';
 import { ClientePerfil } from './pages/cliente/ClientePerfil';
@@ -119,6 +120,7 @@ function Rotas() {
           <>
             <Route path="/admin"           element={<AdminDashboard />} />
             <Route path="/admin/lojas"     element={<AdminLojas />} />
+            <Route path="/admin/videos"    element={<AdminVideosAjuda />} />
             <Route path="*"               element={<Navigate to="/admin" replace />} />
           </>
         ) : (
