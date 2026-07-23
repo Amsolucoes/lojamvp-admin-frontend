@@ -188,9 +188,9 @@ export function AdminVideosAjuda() {
                     onChange={e => setForm(f => ({ ...f, ordem: +e.target.value }))} />
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={form.ativo}
+                  <input type="checkbox" checked={!!form.ativo}
                     style={{ width: 16, height: 16, margin: 0 }}
-                    onChange={e => setForm(f => ({ ...f, ativo: e.target.checked }))} />
+                    onChange={e => setForm(f => ({ ...f, ativo: e.target.checked === true }))} />
                   <span>Vídeo ativo (visível pros clientes)</span>
                 </label>
               </div>
