@@ -121,7 +121,8 @@ export function AdminVideosAjuda() {
         ) : listaFiltrada.length === 0 ? (
           <div className="empty"><Play size={32} /><p>Nenhum vídeo cadastrado ainda.</p></div>
         ) : (
-          <div className="table-wrap">
+          <>
+          <div className="table-wrap admin-table-desktop">
             <table>
               <thead>
                 <tr><th>Título</th><th>Categoria</th><th>YouTube ID</th><th>Ordem</th><th>Status</th><th>Ações</th></tr>
@@ -150,6 +151,37 @@ export function AdminVideosAjuda() {
               </tbody>
             </table>
           </div>
+
+          <div className="admin-cards-mobile">
+            {listaFiltrada.map(v => (
+              <div key={v.id} className="admin-card-mobile">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, fontSize: 14 }}>{v.titulo}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
+                      <span className="badge badge-accent">{v.categoria}</span>
+                      <span className={`badge ${v.ativo ? 'badge-green' : 'badge-red'}`}>{v.ativo ? 'Ativo' : 'Inativo'}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+                      ID: {v.youtubeId} · Ordem: {v.ordem}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                  <button className="btn-secondary" style={{ fontSize: 12, flex: 1 }} onClick={() => abrirEditar(v)}>
+                    <Edit2 size={13} /> Editar
+                  </button>
+                  <button className="btn-secondary" style={{ fontSize: 12, flex: 1 }} onClick={() => alternarAtivo(v)}>
+                    {v.ativo ? 'Desativar' : 'Ativar'}
+                  </button>
+                  <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Excluir" onClick={() => setConfirmDel(v)}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          </>
         )}
       </div>
 
