@@ -17,7 +17,19 @@ interface Categoria {
   nome: string;
   ordem: number;
   ativa: boolean;
+  modulosRelacionados: string | null;
 }
+
+const MODULOS_DISPONIVEIS = [
+  { chave: 'produtos', label: 'Produtos' },
+  { chave: 'servicos', label: 'Serviços' },
+  { chave: 'turmas', label: 'Turmas' },
+  { chave: 'corretora', label: 'Corretora' },
+  { chave: 'financeiro', label: 'Financeiro' },
+  { chave: 'nf', label: 'Importação de NF' },
+  { chave: 'funcionarios', label: 'Funcionários' },
+  { chave: 'chacara_reservas', label: 'Chácara Reservas' },
+];
 
 const EMPTY = { titulo: '', categoria: '', youtubeId: '', ordem: 0, ativo: true };
 
@@ -29,7 +41,7 @@ export function AdminVideosAjuda() {
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
 
   const [modalCategorias, setModalCategorias] = useState(false);
-  const [formCat, setFormCat] = useState({ nome: '', ordem: 0, ativa: true });
+  const [formCat, setFormCat] = useState({ nome: '', ordem: 0, ativa: true, modulosRelacionados: [] as string[] });
   const [editandoCat, setEditandoCat] = useState<Categoria | null>(null);
   const [confirmDelCat, setConfirmDelCat] = useState<Categoria | null>(null);
   const [modal, setModal] = useState<'novo' | 'editar' | null>(null);
@@ -105,19 +117,23 @@ export function AdminVideosAjuda() {
 
   function abrirNovaCategoria() {
     setEditandoCat(null);
-    setFormCat({ nome: '', ordem: 0, ativa: true });
+    setFormCat({ nome: '', ordem: 0, ativa: true, modulosRelacionados: [] });
   }
 
   function abrirEditarCategoria(c: Categoria) {
     setEditandoCat(c);
-    setFormCat({ nome: c.nome, ordem: c.ordem, ativa: c.ativa });
+    setFormCat({
+      nome: c.nome, ordem: c.ordem, ativa: c.ativa,
+      modulosRelacionados: c.modulosRelacionados ? c.modulosRelacionados.split(',').filter(Boolean) : [],
+    });
   }
 
   async function salvarCategoria() {
     if (!formCat.nome.trim()) { erro('Digite o nome da categoria.'); return; }
     try {
-      if (editandoCat) await api.put(`/api/categorias-video-ajuda/${editandoCat.id}`, formCat);
-      else await api.post('/api/categorias-video-ajuda', formCat);
+      const payload = { ...formCat, modulosRelacionados: formCat.modulosRelacionados.join(',') || null };
+      if (editandoCat) await api.put(`/api/categorias-video-ajuda/${editandoCat.id}`, payload);
+      else await api.post('/api/categorias-video-ajuda', payload);
       carregarCategorias();
       await carregar(); // recarrega vídeos, caso o nome da categoria tenha mudado
       abrirNovaCategoria();
@@ -328,6 +344,29 @@ export function AdminVideosAjuda() {
                       Ativa
                     </label>
                   </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Aparece para lojas com <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(vazio = todas)</span></label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {MODULOS_DISPONIVEIS.map(m => {
+                        const marcado = formCat.modulosRelacionados.includes(m.chave);
+                        return (
+                          <button key={m.chave} type="button"
+                            className={marcado ? 'btn-primary' : 'btn-secondary'}
+                            style={{ fontSize: 11, padding: '5px 10px' }}
+                            onClick={() => setFormCat(f => ({
+                              ...f,
+                              modulosRelacionados: marcado
+                                ? f.modulosRelacionados.filter(x => x !== m.chave)
+                                : [...f.modulosRelacionados, m.chave],
+                            }))}>
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-primary" style={{ flex: 1 }} onClick={salvarCategoria}>
                       {editandoCat ? 'Salvar alterações' : 'Adicionar categoria'}
