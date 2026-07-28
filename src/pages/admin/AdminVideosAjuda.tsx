@@ -39,6 +39,8 @@ export function AdminVideosAjuda() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  const [paginaLista, setPaginaLista] = useState(1);
+  const [itensPorPagina, setItensPorPagina] = useState(15);
 
   const [modalCategorias, setModalCategorias] = useState(false);
   const [formCat, setFormCat] = useState({ nome: '', ordem: 0, ativa: true, modulosRelacionados: [] as string[] });
@@ -61,6 +63,7 @@ export function AdminVideosAjuda() {
   }
 
   useEffect(() => { carregar(); carregarCategorias(); }, []);
+  useEffect(() => { setPaginaLista(1); }, [filtroCategoria, itensPorPagina]);
 
   function abrirNovo() {
     setEditandoId(null);
@@ -159,6 +162,19 @@ export function AdminVideosAjuda() {
     ? videos
     : videos.filter(v => v.categoria === filtroCategoria);
 
+  const totalPaginas = Math.max(1, Math.ceil(listaFiltrada.length / itensPorPagina));
+  const paginaAtual = Math.min(paginaLista, totalPaginas);
+  const listaPaginada = listaFiltrada.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
+
+  // Agrupa as categorias por módulo relacionado, pra não virar uma linha só de botões
+  const gruposCategoria: { label: string; categorias: Categoria[] }[] = [
+    ...MODULOS_DISPONIVEIS.map(m => ({
+      label: m.label,
+      categorias: categorias.filter(c => c.modulosRelacionados?.split(',').includes(m.chave)),
+    })).filter(g => g.categorias.length > 0),
+    { label: 'Geral (todas as lojas)', categorias: categorias.filter(c => !c.modulosRelacionados) },
+  ].filter(g => g.categorias.length > 0);
+
   return (
     <div className="page">
       <div className="page-header">
@@ -176,12 +192,23 @@ export function AdminVideosAjuda() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button className={filtroCategoria === 'todas' ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
-          onClick={() => setFiltroCategoria('todas')}>Todas</button>
-        {categorias.map(cat => (
-          <button key={cat.id} className={filtroCategoria === cat.nome ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
-            onClick={() => setFiltroCategoria(cat.nome)}>{cat.nome}</button>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <button className={filtroCategoria === 'todas' ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
+            onClick={() => setFiltroCategoria('todas')}>Todas</button>
+        </div>
+        {gruposCategoria.map(grupo => (
+          <div key={grupo.label} style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.05, marginBottom: 6 }}>
+              {grupo.label}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {grupo.categorias.map(cat => (
+                <button key={cat.id} className={filtroCategoria === cat.nome ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
+                  onClick={() => setFiltroCategoria(cat.nome)}>{cat.nome}</button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -198,7 +225,7 @@ export function AdminVideosAjuda() {
                 <tr><th>Título</th><th>Categoria</th><th>YouTube ID</th><th>Ordem</th><th>Status</th><th>Ações</th></tr>
               </thead>
               <tbody>
-                {listaFiltrada.map(v => (
+                {listaPaginada.map(v => (
                   <tr key={v.id}>
                     <td style={{ fontWeight: 500 }}>{v.titulo}</td>
                     <td><span className="badge badge-accent">{v.categoria}</span></td>
@@ -223,7 +250,7 @@ export function AdminVideosAjuda() {
           </div>
 
           <div className="admin-cards-mobile">
-            {listaFiltrada.map(v => (
+            {listaPaginada.map(v => (
               <div key={v.id} className="admin-card-mobile">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
@@ -305,6 +332,23 @@ export function AdminVideosAjuda() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {!loading && listaFiltrada.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
+          <select value={itensPorPagina} onChange={e => setItensPorPagina(parseInt(e.target.value))} style={{ width: 'auto', fontSize: 12, padding: '4px 8px' }}>
+            <option value={15}>15 por página</option>
+            <option value={30}>30 por página</option>
+            <option value={50}>50 por página</option>
+          </select>
+          {totalPaginas > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button className="btn-secondary" disabled={paginaAtual <= 1} onClick={() => setPaginaLista(p => Math.max(1, p - 1))} style={{ padding: '4px 10px' }}>Anterior</button>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{paginaAtual} / {totalPaginas}</span>
+              <button className="btn-secondary" disabled={paginaAtual >= totalPaginas} onClick={() => setPaginaLista(p => Math.min(totalPaginas, p + 1))} style={{ padding: '4px 10px' }}>Próxima</button>
+            </div>
+          )}
         </div>
       )}
 
