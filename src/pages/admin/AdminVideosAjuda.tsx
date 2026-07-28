@@ -38,6 +38,7 @@ export function AdminVideosAjuda() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
+  const [moduloSelecionado, setModuloSelecionado] = useState('todos');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [paginaLista, setPaginaLista] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(15);
@@ -60,6 +61,11 @@ export function AdminVideosAjuda() {
 
   function carregarCategorias() {
     api.get<Categoria[]>('/api/categorias-video-ajuda/todas').then(setCategorias).catch(() => {});
+  }
+
+  function mudarModulo(modulo: string) {
+    setModuloSelecionado(modulo);
+    setFiltroCategoria('todas');
   }
 
   useEffect(() => { carregar(); carregarCategorias(); }, []);
@@ -166,14 +172,18 @@ export function AdminVideosAjuda() {
   const paginaAtual = Math.min(paginaLista, totalPaginas);
   const listaPaginada = listaFiltrada.slice((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina);
 
-  // Agrupa as categorias por módulo relacionado, pra não virar uma linha só de botões
-  const gruposCategoria: { label: string; categorias: Categoria[] }[] = [
-    ...MODULOS_DISPONIVEIS.map(m => ({
-      label: m.label,
-      categorias: categorias.filter(c => c.modulosRelacionados?.split(',').includes(m.chave)),
-    })).filter(g => g.categorias.length > 0),
-    { label: 'Geral (todas as lojas)', categorias: categorias.filter(c => !c.modulosRelacionados) },
-  ].filter(g => g.categorias.length > 0);
+  // Só lista módulos que realmente têm alguma categoria vinculada, mais "Geral" se aplicável
+  const modulosComCategoria = MODULOS_DISPONIVEIS.filter(m =>
+    categorias.some(c => c.modulosRelacionados?.split(',').includes(m.chave))
+  );
+  const temGeral = categorias.some(c => !c.modulosRelacionados);
+
+  // Categorias visíveis no segundo select, de acordo com o módulo escolhido no primeiro
+  const categoriasDoModulo = moduloSelecionado === 'todos'
+    ? categorias
+    : moduloSelecionado === 'geral'
+    ? categorias.filter(c => !c.modulosRelacionados)
+    : categorias.filter(c => c.modulosRelacionados?.split(',').includes(moduloSelecionado));
 
   return (
     <div className="page">
@@ -192,24 +202,22 @@ export function AdminVideosAjuda() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <button className={filtroCategoria === 'todas' ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
-            onClick={() => setFiltroCategoria('todas')}>Todas</button>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="form-group" style={{ minWidth: 200 }}>
+          <label className="form-label">Módulo</label>
+          <select value={moduloSelecionado} onChange={e => mudarModulo(e.target.value)}>
+            <option value="todos">Todos os módulos</option>
+            {modulosComCategoria.map(m => <option key={m.chave} value={m.chave}>{m.label}</option>)}
+            {temGeral && <option value="geral">Geral (todas as lojas)</option>}
+          </select>
         </div>
-        {gruposCategoria.map(grupo => (
-          <div key={grupo.label} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.05, marginBottom: 6 }}>
-              {grupo.label}
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {grupo.categorias.map(cat => (
-                <button key={cat.id} className={filtroCategoria === cat.nome ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
-                  onClick={() => setFiltroCategoria(cat.nome)}>{cat.nome}</button>
-              ))}
-            </div>
-          </div>
-        ))}
+        <div className="form-group" style={{ minWidth: 200 }}>
+          <label className="form-label">Tela</label>
+          <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)}>
+            <option value="todas">Todas</option>
+            {categoriasDoModulo.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
