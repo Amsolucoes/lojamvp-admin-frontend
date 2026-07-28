@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Play } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Play, Tag } from 'lucide-react';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -12,18 +12,26 @@ interface Video {
   ativo: boolean;
 }
 
-const CATEGORIAS = [
-  'Produtos', 'Caixa', 'Estoque', 'Clientes', 'Financeiro',
-  'Agenda', 'Planos', 'Turmas', 'Corretora', 'Importação de NF',
-];
+interface Categoria {
+  id: string;
+  nome: string;
+  ordem: number;
+  ativa: boolean;
+}
 
-const EMPTY = { titulo: '', categoria: CATEGORIAS[0], youtubeId: '', ordem: 0, ativo: true };
+const EMPTY = { titulo: '', categoria: '', youtubeId: '', ordem: 0, ativo: true };
 
 export function AdminVideosAjuda() {
   const { sucesso, erro } = useToast();
   const [videos, setVideos] = useState<Video[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
+
+  const [modalCategorias, setModalCategorias] = useState(false);
+  const [formCat, setFormCat] = useState({ nome: '', ordem: 0, ativa: true });
+  const [editandoCat, setEditandoCat] = useState<Categoria | null>(null);
+  const [confirmDelCat, setConfirmDelCat] = useState<Categoria | null>(null);
   const [modal, setModal] = useState<'novo' | 'editar' | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
@@ -36,11 +44,16 @@ export function AdminVideosAjuda() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { carregar(); }, []);
+  function carregarCategorias() {
+    api.get<Categoria[]>('/api/categorias-video-ajuda/todas').then(setCategorias).catch(() => {});
+  }
+
+  useEffect(() => { carregar(); carregarCategorias(); }, []);
 
   function abrirNovo() {
     setEditandoId(null);
-    setForm({ ...EMPTY, categoria: filtroCategoria !== 'todas' ? filtroCategoria : CATEGORIAS[0] });
+    const categoriasAtivas = categorias.filter(c => c.ativa);
+    setForm({ ...EMPTY, categoria: filtroCategoria !== 'todas' ? filtroCategoria : (categoriasAtivas[0]?.nome ?? '') });
     setModal('novo');
   }
 
@@ -90,6 +103,42 @@ export function AdminVideosAjuda() {
     }
   }
 
+  function abrirNovaCategoria() {
+    setEditandoCat(null);
+    setFormCat({ nome: '', ordem: 0, ativa: true });
+  }
+
+  function abrirEditarCategoria(c: Categoria) {
+    setEditandoCat(c);
+    setFormCat({ nome: c.nome, ordem: c.ordem, ativa: c.ativa });
+  }
+
+  async function salvarCategoria() {
+    if (!formCat.nome.trim()) { erro('Digite o nome da categoria.'); return; }
+    try {
+      if (editandoCat) await api.put(`/api/categorias-video-ajuda/${editandoCat.id}`, formCat);
+      else await api.post('/api/categorias-video-ajuda', formCat);
+      carregarCategorias();
+      await carregar(); // recarrega vídeos, caso o nome da categoria tenha mudado
+      abrirNovaCategoria();
+      sucesso('Categoria salva!');
+    } catch (e) {
+      erro((e as Error).message);
+    }
+  }
+
+  async function excluirCategoria() {
+    if (!confirmDelCat) return;
+    try {
+      const res = await api.delete<any>(`/api/categorias-video-ajuda/${confirmDelCat.id}`);
+      carregarCategorias();
+      setConfirmDelCat(null);
+      sucesso(res?.mensagem ?? 'Categoria removida.');
+    } catch (e) {
+      erro((e as Error).message);
+    }
+  }
+
   const listaFiltrada = filtroCategoria === 'todas'
     ? videos
     : videos.filter(v => v.categoria === filtroCategoria);
@@ -101,17 +150,22 @@ export function AdminVideosAjuda() {
           <h1 className="page-title">Vídeos da Central de Ajuda</h1>
           <p className="page-subtitle">{videos.length} vídeo(s) cadastrado(s)</p>
         </div>
-        <button className="btn-primary" onClick={abrirNovo}>
-          <Plus size={15} style={{ verticalAlign: -2 }} /> Novo vídeo
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={() => { abrirNovaCategoria(); setModalCategorias(true); }}>
+            <Tag size={15} style={{ verticalAlign: -2 }} /> Categorias
+          </button>
+          <button className="btn-primary" onClick={abrirNovo}>
+            <Plus size={15} style={{ verticalAlign: -2 }} /> Novo vídeo
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button className={filtroCategoria === 'todas' ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
           onClick={() => setFiltroCategoria('todas')}>Todas</button>
-        {CATEGORIAS.map(cat => (
-          <button key={cat} className={filtroCategoria === cat ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
-            onClick={() => setFiltroCategoria(cat)}>{cat}</button>
+        {categorias.map(cat => (
+          <button key={cat.id} className={filtroCategoria === cat.nome ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: 12 }}
+            onClick={() => setFiltroCategoria(cat.nome)}>{cat.nome}</button>
         ))}
       </div>
 
@@ -203,7 +257,8 @@ export function AdminVideosAjuda() {
                 <div className="form-group">
                   <label className="form-label">Categoria *</label>
                   <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-                    {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    <option value="">Selecione...</option>
+                    {categorias.filter(c => c.ativa).map(cat => <option key={cat.id} value={cat.nome}>{cat.nome}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -232,6 +287,82 @@ export function AdminVideosAjuda() {
               <button className="btn-primary" onClick={salvar} disabled={saving}>
                 {saving ? 'Salvando...' : modal === 'novo' ? 'Criar vídeo' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal gestão de categorias */}
+      {modalCategorias && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalCategorias(false)}>
+          <div className="modal" style={{ maxWidth: 460 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Categorias de vídeo</h2>
+              <button className="btn-ghost" onClick={() => setModalCategorias(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                {categorias.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', padding: '12px 0' }}>Nenhuma categoria cadastrada.</p>
+                ) : categorias.map(c => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, opacity: c.ativa ? 1 : 0.5 }}>
+                    <span style={{ fontSize: 13 }}>{c.nome} {!c.ativa && <span style={{ color: 'var(--text-3)', fontSize: 11 }}>(inativa)</span>}</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn-ghost" onClick={() => abrirEditarCategoria(c)}>Editar</button>
+                      <button className="btn-ghost" style={{ color: 'var(--red)' }} onClick={() => setConfirmDelCat(c)}><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{editandoCat ? 'Editar categoria' : 'Nova categoria'}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <input value={formCat.nome} onChange={e => setFormCat(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Corretora" />
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input type="number" min={0} value={formCat.ordem} style={{ width: 90 }}
+                      onChange={e => setFormCat(f => ({ ...f, ordem: +e.target.value }))} placeholder="Ordem" />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={formCat.ativa} style={{ width: 16, height: 16, margin: 0 }}
+                        onChange={e => setFormCat(f => ({ ...f, ativa: e.target.checked }))} />
+                      Ativa
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn-primary" style={{ flex: 1 }} onClick={salvarCategoria}>
+                      {editandoCat ? 'Salvar alterações' : 'Adicionar categoria'}
+                    </button>
+                    {editandoCat && <button className="btn-secondary" onClick={abrirNovaCategoria}>Cancelar</button>}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalCategorias(false)}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmar exclusão categoria */}
+      {confirmDelCat && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDelCat(null)}>
+          <div className="modal" style={{ maxWidth: 380 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Excluir categoria</h2>
+              <button className="btn-ghost" onClick={() => setConfirmDelCat(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.7 }}>
+                Excluir <strong style={{ color: 'var(--text-1)' }}>{confirmDelCat.nome}</strong>?
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
+                Se houver vídeos usando essa categoria, ela será apenas desativada em vez de excluída.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setConfirmDelCat(null)}>Cancelar</button>
+              <button className="btn-danger" onClick={excluirCategoria}>Excluir</button>
             </div>
           </div>
         </div>
