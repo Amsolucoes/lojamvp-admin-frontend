@@ -62,7 +62,7 @@ export function AdminDashboard() {
           background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
         }}>
           <div className="dash-section-title" style={{ margin: 0 }}>
-            <TrendingUp size={14} style={{ color: 'var(--green)' }} /> Projeção mensal — {data.projecaoMensal.length} loja(s) ativa(s)
+            <TrendingUp size={14} style={{ color: 'var(--green)' }} /> Projeção mensal — {data.projecaoMensal.length} loja(s) (ativas + trial)
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--green)' }}>{fmt(data.receitaMensal)}</span>
@@ -75,11 +75,12 @@ export function AdminDashboard() {
             <div className="empty" style={{ padding: '20px 0' }}><p>Nenhuma loja ativa no momento.</p></div>
           ) : (
             <table style={{ marginTop: 14 }}>
-              <thead><tr><th>Loja</th><th>Vencimento (dia)</th><th>Próximo vencimento</th><th>Valor</th></tr></thead>
+              <thead><tr><th>Loja</th><th>Status</th><th>Vencimento (dia)</th><th>Próximo vencimento</th><th>Valor</th></tr></thead>
               <tbody>
                 {data.projecaoMensal.map(l => (
                   <tr key={l.id}>
                     <td style={{ fontWeight: 500 }}>{l.nome}</td>
+                    <td><span className={`badge ${l.status === 'Ativo' ? 'badge-green' : 'badge-blue'}`}>{l.status}</span></td>
                     <td style={{ color: 'var(--text-3)' }}>Dia {l.mensalidadeDia}</td>
                     <td style={{ color: 'var(--text-3)' }}>{fmtData(l.proximoVencimento ?? undefined)}</td>
                     <td style={{ color: 'var(--green)', fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>

@@ -94,6 +94,7 @@ export interface ProjecaoMensal {
   mensalidadeValor: number;
   mensalidadeDia: number;
   proximoVencimento: string | null;
+  status: string;
 }
 
 export interface DashboardAdmin {
