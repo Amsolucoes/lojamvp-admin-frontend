@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, TrendingUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Building2, TrendingUp, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { api, DashboardAdmin } from '../../services/api';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -13,6 +13,7 @@ function StatusBadge({ status }: { status: string }) {
 export function AdminDashboard() {
   const [data, setData]     = useState<DashboardAdmin | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandido, setExpandido] = useState(false);
 
   useEffect(() => {
     api.get<DashboardAdmin>('/api/admin/dashboard')
@@ -52,6 +53,42 @@ export function AdminDashboard() {
           <div className="stat-value" style={{ fontSize: 20 }}>{fmt(data.receitaTotal)}</div>
           <div className="stat-sub">acumulado</div>
         </div>
+      </div>
+
+      {/* Projeção mensal detalhada */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <button onClick={() => setExpandido(v => !v)} style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+        }}>
+          <div className="dash-section-title" style={{ margin: 0 }}>
+            <TrendingUp size={14} style={{ color: 'var(--green)' }} /> Projeção mensal — {data.projecaoMensal.length} loja(s) ativa(s)
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--green)' }}>{fmt(data.receitaMensal)}</span>
+            {expandido ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
+
+        {expandido && (
+          data.projecaoMensal.length === 0 ? (
+            <div className="empty" style={{ padding: '20px 0' }}><p>Nenhuma loja ativa no momento.</p></div>
+          ) : (
+            <table style={{ marginTop: 14 }}>
+              <thead><tr><th>Loja</th><th>Vencimento (dia)</th><th>Próximo vencimento</th><th>Valor</th></tr></thead>
+              <tbody>
+                {data.projecaoMensal.map(l => (
+                  <tr key={l.id}>
+                    <td style={{ fontWeight: 500 }}>{l.nome}</td>
+                    <td style={{ color: 'var(--text-3)' }}>Dia {l.mensalidadeDia}</td>
+                    <td style={{ color: 'var(--text-3)' }}>{fmtData(l.proximoVencimento ?? undefined)}</td>
+                    <td style={{ color: 'var(--green)', fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
       </div>
 
       <div className="dash-grid">

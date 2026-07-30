@@ -88,12 +88,21 @@ export interface Pagamento {
   criadoEm: string;
 }
 
+export interface ProjecaoMensal {
+  id: string;
+  nome: string;
+  mensalidadeValor: number;
+  mensalidadeDia: number;
+  proximoVencimento: string | null;
+}
+
 export interface DashboardAdmin {
   totalLojas: number; lojasAtivas: number;
   lojasTrial: number; lojasBloqueadas: number;
   lojasEmAtraso: number;
   receitaMensal: number; receitaTotal: number;
   lojasAtrasadas: any[]; ultimosPagamentos: Pagamento[];
+  projecaoMensal: ProjecaoMensal[];
 }
 
 export interface DashboardCliente {
