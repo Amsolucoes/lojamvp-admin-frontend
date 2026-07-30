@@ -74,20 +74,28 @@ export function AdminDashboard() {
           data.projecaoMensal.length === 0 ? (
             <div className="empty" style={{ padding: '20px 0' }}><p>Nenhuma loja ativa no momento.</p></div>
           ) : (
-            <table style={{ marginTop: 14 }}>
-              <thead><tr><th>Loja</th><th>Status</th><th>Vencimento (dia)</th><th>Próximo vencimento</th><th>Valor</th></tr></thead>
-              <tbody>
-                {data.projecaoMensal.map(l => (
-                  <tr key={l.id}>
-                    <td style={{ fontWeight: 500 }}>{l.nome}</td>
-                    <td><span className={`badge ${l.status === 'Ativo' ? 'badge-green' : 'badge-blue'}`}>{l.status}</span></td>
-                    <td style={{ color: 'var(--text-3)' }}>Dia {l.mensalidadeDia}</td>
-                    <td style={{ color: 'var(--text-3)' }}>{fmtData(l.proximoVencimento ?? undefined)}</td>
-                    <td style={{ color: 'var(--green)', fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              <table style={{ marginTop: 14 }}>
+                <thead><tr><th>Loja</th><th>Status</th><th>Vencimento (dia)</th><th>Próximo vencimento</th><th>Valor</th></tr></thead>
+                <tbody>
+                  {data.projecaoMensal.map(l => (
+                    <tr key={l.id}>
+                      <td style={{ fontWeight: 500 }}>{l.nome}</td>
+                      <td><span className={`badge ${l.status === 'Ativo' ? 'badge-green' : 'badge-blue'}`}>{l.status}</span></td>
+                      <td style={{ color: 'var(--text-3)' }}>Dia {l.mensalidadeDia}</td>
+                      <td style={{ color: 'var(--text-3)' }}>{fmtData(l.proximoVencimento ?? undefined)}</td>
+                      <td style={{ color: 'var(--green)', fontWeight: 500 }}>{fmt(l.mensalidadeValor)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Total da projeção (ativas + trial)</span>
+                <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--green)' }}>
+                  {fmt(data.projecaoMensal.reduce((s, l) => s + l.mensalidadeValor, 0))}
+                </span>
+              </div>
+            </>
           )
         )}
       </div>
