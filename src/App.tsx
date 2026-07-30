@@ -7,8 +7,6 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLojas } from './pages/admin/AdminLojas';
 import { AdminVideosAjuda } from './pages/admin/AdminVideosAjuda';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
-import { ClienteConfig } from './pages/cliente/ClienteConfig';
-import { ClientePerfil } from './pages/cliente/ClientePerfil';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
@@ -126,8 +124,6 @@ function Rotas() {
         ) : (
           <>
             <Route path="/cliente"         element={<ClienteDashboard />} />
-            <Route path="/cliente/config"  element={<ClienteConfig />} />
-            <Route path="/cliente/perfil"  element={<ClientePerfil />} />
             <Route path="*"               element={<Navigate to="/cliente" replace />} />
           </>
         )}
