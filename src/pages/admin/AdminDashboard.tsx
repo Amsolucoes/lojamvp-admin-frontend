@@ -59,7 +59,7 @@ export function AdminDashboard() {
       <div className="card" style={{ marginBottom: 20 }}>
         <button onClick={() => setExpandido(v => !v)} style={{
           width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+          background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-1)',
         }}>
           <div className="dash-section-title" style={{ margin: 0 }}>
             <TrendingUp size={14} style={{ color: 'var(--green)' }} /> Projeção mensal — {data.projecaoMensal.length} loja(s) (ativas + trial)
