@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Building2, CreditCard, LogOut, Settings, Tag, Menu, X, KeyRound, PlayCircle } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, LogOut, Menu, X, KeyRound, PlayCircle, Package } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import './Sidebar.css';
@@ -10,6 +10,7 @@ const NAV_SUPER = [
   { to: '/admin/lojas',      icon: Building2,       label: 'Lojas'       },
   { to: '/admin/pagamentos', icon: CreditCard,      label: 'Pagamentos'  },
   { to: '/admin/videos',     icon: PlayCircle,      label: 'Vídeos de Ajuda' },
+  { to: '/admin/acessorios', icon: Package,         label: 'Loja de Acessórios' },
 ];
 
 const NAV_CLIENTE = [
