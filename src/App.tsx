@@ -7,6 +7,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLojas } from './pages/admin/AdminLojas';
 import { AdminVideosAjuda } from './pages/admin/AdminVideosAjuda';
 import { AdminAcessorios } from './pages/admin/AdminAcessorios';
+import { AdminPedidosAcessorios } from './pages/admin/AdminPedidosAcessorios';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
@@ -121,6 +122,7 @@ function Rotas() {
             <Route path="/admin/lojas"     element={<AdminLojas />} />
             <Route path="/admin/videos"    element={<AdminVideosAjuda />} />
             <Route path="/admin/acessorios" element={<AdminAcessorios />} />
+            <Route path="/admin/acessorios/pedidos" element={<AdminPedidosAcessorios />} />
             <Route path="*"               element={<Navigate to="/admin" replace />} />
           </>
         ) : (
