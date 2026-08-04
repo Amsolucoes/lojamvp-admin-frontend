@@ -779,7 +779,7 @@ async function trocarEmail() {
                         onClick={() => setExpandido(expandido === c.id ? null : c.id)}
                         style={{ width: '100%', textAlign: 'left', padding: '12px 14px', background: 'var(--bg-3)', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.assunto}</div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.assunto}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
                             {new Date(c.enviadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             {c.todasLojas && ' · Todas as lojas'}
