@@ -77,6 +77,27 @@ export function AdminLojas() {
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
+
+  const algumModalAberto = !!(modal || modalDel || modalEmail || modalValor || modalTrial || modalComunicado || modalHistorico);
+
+  useEffect(() => {
+    if (algumModalAberto) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [algumModalAberto]);
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(15);
   const [filtroModulo, setFiltroModulo] = useState('todos');
