@@ -70,6 +70,10 @@ export function AdminLojas() {
   const [novoEmailExtra, setNovoEmailExtra] = useState('');
   const [enviandoComunicado, setEnviandoComunicado] = useState(false);
   const [resultadoComunicado, setResultadoComunicado] = useState<{ totalEnviados: number; totalFalhas: number; falhas: string[] } | null>(null);
+  const [modalHistorico, setModalHistorico] = useState(false);
+  const [historicoComunicados, setHistoricoComunicados] = useState<any[]>([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
+  const [expandido, setExpandido] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
@@ -236,6 +240,18 @@ async function trocarEmail() {
     setComunicadoForm(f => ({ ...f, emailsExtras: f.emailsExtras.filter(e => e !== email) }));
   }
 
+  async function abrirHistorico() {
+    setModalHistorico(true);
+    setCarregandoHistorico(true);
+    try {
+      setHistoricoComunicados(await api.get<any[]>('/api/admin/comunicados'));
+    } catch (e) {
+      toastErro('Erro ao carregar histórico: ' + (e as Error).message);
+    } finally {
+      setCarregandoHistorico(false);
+    }
+  }
+
   async function enviarComunicado() {
     if (!comunicadoForm.assunto.trim() || !comunicadoForm.mensagem.trim()) {
       toastErro('Preencha assunto e mensagem.');
@@ -331,6 +347,9 @@ async function trocarEmail() {
             setModalComunicado(true);
           }}>
             📢 Novo comunicado
+          </button>
+          <button className="btn-secondary" onClick={abrirHistorico}>
+            🕐 Histórico
           </button>
           <button className="btn-primary" onClick={() => { setForm(EMPTY_LOJA); setErro(''); setModal('nova'); }}>
             <Plus size={15} style={{ verticalAlign: -2 }} /> Nova loja
@@ -734,6 +753,80 @@ async function trocarEmail() {
                   {enviandoComunicado ? 'Enviando...' : 'Enviar comunicado'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal histórico de comunicados */}
+      {modalHistorico && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalHistorico(false)}>
+          <div className="modal" style={{ maxWidth: 640 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>🕐 Histórico de comunicados</h2>
+              <button className="btn-ghost" onClick={() => setModalHistorico(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              {carregandoHistorico ? (
+                <div className="empty"><div className="spinner" /></div>
+              ) : historicoComunicados.length === 0 ? (
+                <div className="empty" style={{ padding: '30px 0' }}><p>Nenhum comunicado enviado ainda.</p></div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {historicoComunicados.map(c => (
+                    <div key={c.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                      <button
+                        onClick={() => setExpandido(expandido === c.id ? null : c.id)}
+                        style={{ width: '100%', textAlign: 'left', padding: '12px 14px', background: 'var(--bg-3)', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.assunto}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                            {new Date(c.enviadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {c.todasLojas && ' · Todas as lojas'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          <span className="badge badge-green" style={{ fontSize: 11 }}>{c.totalEnviados} enviado(s)</span>
+                          {c.totalFalhas > 0 && <span className="badge badge-red" style={{ fontSize: 11 }}>{c.totalFalhas} falha(s)</span>}
+                        </div>
+                      </button>
+
+                      {expandido === c.id && (
+                        <div style={{ padding: 14, borderTop: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Corpo do e-mail:</div>
+                          <div
+                            style={{ fontSize: 13, background: 'var(--bg-3)', borderRadius: 8, padding: 12, marginBottom: 14, maxHeight: 220, overflowY: 'auto' }}
+                            dangerouslySetInnerHTML={{ __html: c.corpoHtml }}
+                          />
+                          {c.destinatariosSucesso?.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{ fontSize: 12, color: 'var(--green)', marginBottom: 4 }}>✓ Enviado com sucesso para:</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {c.destinatariosSucesso.map((email: string) => (
+                                  <span key={email} style={{ fontSize: 11, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 12, padding: '3px 9px' }}>{email}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {c.destinatariosFalha?.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 4 }}>✗ Falhou para:</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {c.destinatariosFalha.map((email: string) => (
+                                  <span key={email} style={{ fontSize: 11, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 12, padding: '3px 9px' }}>{email}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalHistorico(false)}>Fechar</button>
             </div>
           </div>
         </div>
