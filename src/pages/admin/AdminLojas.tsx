@@ -65,6 +65,10 @@ export function AdminLojas() {
   const [perfis, setPerfis] = useState<any[]>([]);
   const [modalTrial, setModalTrial] = useState(false);
   const [novaDataTrial, setNovaDataTrial] = useState('');
+  const [modalComunicado, setModalComunicado] = useState(false);
+  const [comunicadoForm, setComunicadoForm] = useState({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] as string[] });
+  const [enviandoComunicado, setEnviandoComunicado] = useState(false);
+  const [resultadoComunicado, setResultadoComunicado] = useState<{ totalEnviados: number; totalFalhas: number; falhas: string[] } | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
@@ -212,6 +216,45 @@ async function trocarEmail() {
     }
   }
 
+  function toggleLojaComunicado(id: string) {
+    setComunicadoForm(f => ({
+      ...f,
+      lojaIds: f.lojaIds.includes(id) ? f.lojaIds.filter(x => x !== id) : [...f.lojaIds, id],
+    }));
+  }
+
+  async function enviarComunicado() {
+    if (!comunicadoForm.assunto.trim() || !comunicadoForm.mensagem.trim()) {
+      toastErro('Preencha assunto e mensagem.');
+      return;
+    }
+    if (!comunicadoForm.todasLojas && comunicadoForm.lojaIds.length === 0) {
+      toastErro('Selecione ao menos uma loja, ou marque "Todas as lojas".');
+      return;
+    }
+    setEnviandoComunicado(true);
+    setResultadoComunicado(null);
+    try {
+      const corpoHtml = comunicadoForm.mensagem
+        .split('\n\n')
+        .map(par => `<p style="margin:0 0 12px;line-height:1.6;color:#333">${par.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+
+      const res = await api.post<any>('/api/admin/comunicados/enviar', {
+        lojaIds: comunicadoForm.todasLojas ? null : comunicadoForm.lojaIds,
+        todasLojas: comunicadoForm.todasLojas,
+        assunto: comunicadoForm.assunto,
+        corpoHtml,
+      });
+      setResultadoComunicado(res);
+      toastSucesso?.(res.mensagem ?? 'Comunicado enviado!');
+    } catch (e) {
+      toastErro('Erro ao enviar comunicado: ' + (e as Error).message);
+    } finally {
+      setEnviandoComunicado(false);
+    }
+  }
+
   async function salvarTrial() {
     if (!novaDataTrial || !selecionada) return;
     setSaving(true);
@@ -264,6 +307,13 @@ async function trocarEmail() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn-secondary" onClick={verificarBloqueios} disabled={verificando} title="Reavalia o status de todas as lojas (bloqueia inadimplentes)">
             {verificando ? 'Verificando...' : '🔄 Verificar bloqueios'}
+          </button>
+          <button className="btn-secondary" onClick={() => {
+            setComunicadoForm({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] });
+            setResultadoComunicado(null);
+            setModalComunicado(true);
+          }}>
+            📢 Novo comunicado
           </button>
           <button className="btn-primary" onClick={() => { setForm(EMPTY_LOJA); setErro(''); setModal('nova'); }}>
             <Plus size={15} style={{ verticalAlign: -2 }} /> Nova loja
@@ -564,6 +614,86 @@ async function trocarEmail() {
               <button className="btn-primary" onClick={salvarTrial} disabled={saving || !novaDataTrial}>
                 {saving ? 'Salvando...' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal novo comunicado */}
+      {modalComunicado && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalComunicado(false)}>
+          <div className="modal" style={{ maxWidth: 560 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>📢 Novo comunicado por e-mail</h2>
+              <button className="btn-ghost" onClick={() => setModalComunicado(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              {resultadoComunicado ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>{resultadoComunicado.totalFalhas === 0 ? '✅' : '⚠️'}</div>
+                  <p style={{ fontSize: 15, fontWeight: 600 }}>{resultadoComunicado.totalEnviados} e-mail(s) enviado(s)</p>
+                  {resultadoComunicado.totalFalhas > 0 && (
+                    <>
+                      <p style={{ fontSize: 13, color: 'var(--red)', marginTop: 6 }}>{resultadoComunicado.totalFalhas} falharam:</p>
+                      <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{resultadoComunicado.falhas.join(', ')}</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="form-group" style={{ marginBottom: 14 }}>
+                    <label className="form-label">Assunto</label>
+                    <input value={comunicadoForm.assunto}
+                      onChange={e => setComunicadoForm(f => ({ ...f, assunto: e.target.value }))}
+                      placeholder="Ex: 🎉 Novidade: Cupom não fiscal chegou!" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 16 }}>
+                    <label className="form-label">Mensagem</label>
+                    <textarea rows={8} value={comunicadoForm.mensagem}
+                      onChange={e => setComunicadoForm(f => ({ ...f, mensagem: e.target.value }))}
+                      placeholder="Escreva a novidade ou aviso. Pule uma linha em branco para separar parágrafos." />
+                    <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                      Todo e-mail já inclui um botão "Acessar o sistema" no final automaticamente.
+                    </p>
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}>
+                    <input type="checkbox" checked={comunicadoForm.todasLojas}
+                      style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
+                      onChange={e => setComunicadoForm(f => ({ ...f, todasLojas: e.target.checked }))} />
+                    <span>Enviar para <strong>todas as lojas</strong> ({lojas.filter(l => !l.ehTeste).length} loja(s) real(is))</span>
+                  </label>
+
+                  {!comunicadoForm.todasLojas && (
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto' }}>
+                      {lista.filter(l => !l.ehTeste).map(l => (
+                        <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '1px solid var(--border)', fontSize: 13, cursor: 'pointer' }}>
+                          <input type="checkbox" checked={comunicadoForm.lojaIds.includes(l.id)}
+                            style={{ width: 15, height: 15, margin: 0, flexShrink: 0 }}
+                            onChange={() => toggleLojaComunicado(l.id)} />
+                          <span>{l.nome}</span>
+                          <span style={{ color: 'var(--text-3)', fontSize: 11, marginLeft: 'auto' }}>{l.email}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {!comunicadoForm.todasLojas && (
+                    <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
+                      {comunicadoForm.lojaIds.length} loja(s) selecionada(s) — a lista respeita os filtros aplicados na tela.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalComunicado(false)}>
+                {resultadoComunicado ? 'Fechar' : 'Cancelar'}
+              </button>
+              {!resultadoComunicado && (
+                <button className="btn-primary" onClick={enviarComunicado} disabled={enviandoComunicado}>
+                  {enviandoComunicado ? 'Enviando...' : 'Enviar comunicado'}
+                </button>
+              )}
             </div>
           </div>
         </div>
