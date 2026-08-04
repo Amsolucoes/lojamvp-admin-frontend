@@ -66,7 +66,8 @@ export function AdminLojas() {
   const [modalTrial, setModalTrial] = useState(false);
   const [novaDataTrial, setNovaDataTrial] = useState('');
   const [modalComunicado, setModalComunicado] = useState(false);
-  const [comunicadoForm, setComunicadoForm] = useState({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] as string[] });
+  const [comunicadoForm, setComunicadoForm] = useState({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] as string[], emailsExtras: [] as string[] });
+  const [novoEmailExtra, setNovoEmailExtra] = useState('');
   const [enviandoComunicado, setEnviandoComunicado] = useState(false);
   const [resultadoComunicado, setResultadoComunicado] = useState<{ totalEnviados: number; totalFalhas: number; falhas: string[] } | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
@@ -223,13 +224,27 @@ async function trocarEmail() {
     }));
   }
 
+  function adicionarEmailExtra() {
+    const email = novoEmailExtra.trim().toLowerCase();
+    if (!email || !email.includes('@')) { toastErro('Informe um e-mail válido.'); return; }
+    if (comunicadoForm.emailsExtras.includes(email)) { setNovoEmailExtra(''); return; }
+    setComunicadoForm(f => ({ ...f, emailsExtras: [...f.emailsExtras, email] }));
+    setNovoEmailExtra('');
+  }
+
+  function removerEmailExtra(email: string) {
+    setComunicadoForm(f => ({ ...f, emailsExtras: f.emailsExtras.filter(e => e !== email) }));
+  }
+
   async function enviarComunicado() {
     if (!comunicadoForm.assunto.trim() || !comunicadoForm.mensagem.trim()) {
       toastErro('Preencha assunto e mensagem.');
       return;
     }
-    if (!comunicadoForm.todasLojas && comunicadoForm.lojaIds.length === 0) {
-      toastErro('Selecione ao menos uma loja, ou marque "Todas as lojas".');
+    const temLojas = comunicadoForm.todasLojas || comunicadoForm.lojaIds.length > 0;
+    const temExtras = comunicadoForm.emailsExtras.length > 0;
+    if (!temLojas && !temExtras) {
+      toastErro('Selecione ao menos uma loja, informe um e-mail, ou marque "Todas as lojas".');
       return;
     }
     setEnviandoComunicado(true);
@@ -245,6 +260,7 @@ async function trocarEmail() {
         todasLojas: comunicadoForm.todasLojas,
         assunto: comunicadoForm.assunto,
         corpoHtml,
+        emailsExtras: comunicadoForm.emailsExtras,
       });
       setResultadoComunicado(res);
       toastSucesso?.(res.mensagem ?? 'Comunicado enviado!');
@@ -309,7 +325,8 @@ async function trocarEmail() {
             {verificando ? 'Verificando...' : '🔄 Verificar bloqueios'}
           </button>
           <button className="btn-secondary" onClick={() => {
-            setComunicadoForm({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] });
+            setComunicadoForm({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [], emailsExtras: [] });
+            setNovoEmailExtra('');
             setResultadoComunicado(null);
             setModalComunicado(true);
           }}>
@@ -682,6 +699,29 @@ async function trocarEmail() {
                       {comunicadoForm.lojaIds.length} loja(s) selecionada(s) — a lista respeita os filtros aplicados na tela.
                     </p>
                   )}
+
+                  <div className="form-group" style={{ marginTop: 16 }}>
+                    <label className="form-label">E-mails extras <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(teste, ou alguém fora das lojas)</span></label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="email" value={novoEmailExtra}
+                        onChange={e => setNovoEmailExtra(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); adicionarEmailExtra(); } }}
+                        placeholder="seuemail@exemplo.com" style={{ flex: 1 }} />
+                      <button type="button" className="btn-secondary" onClick={adicionarEmailExtra}>Adicionar</button>
+                    </div>
+                    {comunicadoForm.emailsExtras.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                        {comunicadoForm.emailsExtras.map(email => (
+                          <span key={email} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 14, padding: '4px 10px', fontSize: 12 }}>
+                            {email}
+                            <button type="button" onClick={() => removerEmailExtra(email)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex' }}>
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
