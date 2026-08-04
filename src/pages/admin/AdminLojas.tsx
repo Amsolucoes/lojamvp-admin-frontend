@@ -795,7 +795,7 @@ async function trocarEmail() {
                         <div style={{ padding: 14, borderTop: '1px solid var(--border)' }}>
                           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Corpo do e-mail:</div>
                           <div
-                            style={{ fontSize: 13, background: 'var(--bg-3)', borderRadius: 8, padding: 12, marginBottom: 14, maxHeight: 220, overflowY: 'auto' }}
+                            style={{ fontSize: 13, background: '#fff', borderRadius: 8, padding: 16, marginBottom: 14, maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border)' }}
                             dangerouslySetInnerHTML={{ __html: c.corpoHtml }}
                           />
                           {c.destinatariosSucesso?.length > 0 && (
