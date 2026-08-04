@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Package, Settings } from 'lucide-react';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -17,16 +17,16 @@ interface Produto {
   ordem: number;
 }
 
-const CATEGORIAS = [
-  { chave: 'leitor_codigo_barras', label: 'Leitor de código de barras' },
-  { chave: 'impressora_fiscal', label: 'Impressora fiscal' },
-  { chave: 'impressora_etiquetas', label: 'Impressora de etiquetas' },
-  { chave: 'outro', label: 'Outro' },
-];
+interface CategoriaAcessorio {
+  id: string;
+  nome: string;
+  chave: string;
+  ordem: number;
+}
 
 const EMPTY = {
   nome: '', descricao: '', preco: 0, precoPromocional: '', estoque: 0,
-  categoria: CATEGORIAS[0].chave, imagensUrls: '', pesoKg: '', ativo: true, ordem: 0,
+  categoria: '', imagensUrls: '', pesoKg: '', ativo: true, ordem: 0,
 };
 
 function fmt(n: number) {
@@ -36,6 +36,7 @@ function fmt(n: number) {
 export function AdminAcessorios() {
   const { sucesso, erro } = useToast();
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaAcessorio[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'novo' | 'editar' | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -43,18 +44,66 @@ export function AdminAcessorios() {
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Produto | null>(null);
 
+  const [modalCategorias, setModalCategorias] = useState(false);
+  const [formCat, setFormCat] = useState('');
+  const [editandoCat, setEditandoCat] = useState<CategoriaAcessorio | null>(null);
+  const [confirmDelCat, setConfirmDelCat] = useState<CategoriaAcessorio | null>(null);
+
+  function labelCategoria(chave: string) {
+    return categorias.find(c => c.chave === chave)?.nome ?? chave;
+  }
+
   async function carregar() {
     setLoading(true);
     try { setProdutos(await api.get<Produto[]>('/api/loja-acessorios/produtos/todos')); }
     finally { setLoading(false); }
   }
 
-  useEffect(() => { carregar(); }, []);
+  function carregarCategorias() {
+    api.get<CategoriaAcessorio[]>('/api/loja-acessorios/produtos/categorias').then(setCategorias).catch(() => {});
+  }
+
+  useEffect(() => { carregar(); carregarCategorias(); }, []);
 
   function abrirNovo() {
     setEditandoId(null);
-    setForm(EMPTY);
+    setForm({ ...EMPTY, categoria: categorias[0]?.chave ?? '' });
     setModal('novo');
+  }
+
+  function abrirNovaCategoria() {
+    setEditandoCat(null);
+    setFormCat('');
+  }
+
+  function abrirEditarCategoria(c: CategoriaAcessorio) {
+    setEditandoCat(c);
+    setFormCat(c.nome);
+  }
+
+  async function salvarCategoria() {
+    if (!formCat.trim()) { erro('Digite o nome da categoria.'); return; }
+    try {
+      if (editandoCat) await api.put(`/api/loja-acessorios/produtos/categorias/${editandoCat.id}`, { nome: formCat.trim() });
+      else await api.post('/api/loja-acessorios/produtos/categorias', { nome: formCat.trim() });
+      carregarCategorias();
+      abrirNovaCategoria();
+      sucesso('Categoria salva!');
+    } catch (e) {
+      erro((e as Error).message);
+    }
+  }
+
+  async function excluirCategoria() {
+    if (!confirmDelCat) return;
+    try {
+      const res = await api.delete<any>(`/api/loja-acessorios/produtos/categorias/${confirmDelCat.id}`);
+      carregarCategorias();
+      setConfirmDelCat(null);
+      sucesso(res?.mensagem ?? 'Categoria removida.');
+    } catch (e) {
+      erro((e as Error).message);
+    }
   }
 
   function abrirEditar(p: Produto) {
@@ -124,9 +173,14 @@ export function AdminAcessorios() {
           <h1 className="page-title">Loja de Acessórios</h1>
           <p className="page-subtitle">{produtos.length} produto(s) cadastrado(s)</p>
         </div>
-        <button className="btn-primary" onClick={abrirNovo}>
-          <Plus size={15} style={{ verticalAlign: -2 }} /> Novo produto
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" onClick={() => { abrirNovaCategoria(); setModalCategorias(true); }}>
+            <Settings size={15} style={{ verticalAlign: -2 }} /> Categorias
+          </button>
+          <button className="btn-primary" onClick={abrirNovo}>
+            <Plus size={15} style={{ verticalAlign: -2 }} /> Novo produto
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -145,7 +199,7 @@ export function AdminAcessorios() {
                   {produtos.map(p => (
                     <tr key={p.id}>
                       <td style={{ fontWeight: 500 }}>{p.nome}</td>
-                      <td><span className="badge badge-accent">{CATEGORIAS.find(c => c.chave === p.categoria)?.label ?? p.categoria}</span></td>
+                      <td><span className="badge badge-accent">{labelCategoria(p.categoria)}</span></td>
                       <td>
                         {p.precoPromocional ? (
                           <>
@@ -175,7 +229,7 @@ export function AdminAcessorios() {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 500, fontSize: 14 }}>{p.nome}</div>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
-                        <span className="badge badge-accent">{CATEGORIAS.find(c => c.chave === p.categoria)?.label ?? p.categoria}</span>
+                        <span className="badge badge-accent">{labelCategoria(p.categoria)}</span>
                         <span className={`badge ${p.ativo ? 'badge-green' : 'badge-red'}`}>{p.ativo ? 'Ativo' : 'Inativo'}</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
@@ -219,7 +273,7 @@ export function AdminAcessorios() {
                 <div className="form-group">
                   <label className="form-label">Categoria *</label>
                   <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-                    {CATEGORIAS.map(c => <option key={c.chave} value={c.chave}>{c.label}</option>)}
+                    {categorias.map(c => <option key={c.id} value={c.chave}>{c.nome}</option>)}
                   </select>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -269,6 +323,68 @@ export function AdminAcessorios() {
               <button className="btn-primary" onClick={salvar} disabled={saving}>
                 {saving ? 'Salvando...' : modal === 'novo' ? 'Criar produto' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal categorias */}
+      {modalCategorias && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalCategorias(false)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Categorias de acessórios</h2>
+              <button className="btn-ghost" onClick={() => setModalCategorias(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                {categorias.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', padding: '12px 0' }}>Nenhuma categoria cadastrada.</p>
+                ) : categorias.map(c => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8 }}>
+                    <span style={{ fontSize: 13 }}>{c.nome}</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn-ghost" onClick={() => abrirEditarCategoria(c)}>Editar</button>
+                      <button className="btn-ghost" style={{ color: 'var(--red)' }} onClick={() => setConfirmDelCat(c)}><Trash2 size={13} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{editandoCat ? 'Editar categoria' : 'Nova categoria'}</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input style={{ flex: 1 }} value={formCat} onChange={e => setFormCat(e.target.value)} placeholder="Ex: Balanças" />
+                  <button className="btn-primary" onClick={salvarCategoria}>{editandoCat ? 'Salvar' : 'Adicionar'}</button>
+                  {editandoCat && <button className="btn-secondary" onClick={abrirNovaCategoria}>Cancelar</button>}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setModalCategorias(false)}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmar exclusão de categoria */}
+      {confirmDelCat && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDelCat(null)}>
+          <div className="modal" style={{ maxWidth: 380 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Excluir categoria</h2>
+              <button className="btn-ghost" onClick={() => setConfirmDelCat(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.7 }}>
+                Excluir <strong style={{ color: 'var(--text-1)' }}>{confirmDelCat.nome}</strong>?
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
+                Se já tiver produtos usando essa categoria, ela será apenas desativada em vez de excluída.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setConfirmDelCat(null)}>Cancelar</button>
+              <button className="btn-danger" onClick={excluirCategoria}>Excluir</button>
             </div>
           </div>
         </div>
