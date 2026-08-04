@@ -14,6 +14,7 @@ interface Produto {
   imagensUrls: string | null;
   pesoKg: number | null;
   ativo: boolean;
+  destaque: boolean;
   ordem: number;
 }
 
@@ -26,7 +27,7 @@ interface CategoriaAcessorio {
 
 const EMPTY = {
   nome: '', descricao: '', preco: 0, precoPromocional: '', estoque: 0,
-  categoria: '', imagensUrls: '', pesoKg: '', ativo: true, ordem: 0,
+  categoria: '', imagensUrls: '', pesoKg: '', ativo: true, destaque: false, ordem: 0,
 };
 
 function fmt(n: number) {
@@ -118,6 +119,7 @@ export function AdminAcessorios() {
       imagensUrls: p.imagensUrls ?? '',
       pesoKg: p.pesoKg != null ? String(p.pesoKg) : '',
       ativo: p.ativo,
+      destaque: p.destaque,
       ordem: p.ordem,
     });
     setModal('editar');
@@ -140,6 +142,7 @@ export function AdminAcessorios() {
         imagensUrls: form.imagensUrls.trim() || null,
         pesoKg: form.pesoKg ? parseFloat(form.pesoKg) : null,
         ativo: form.ativo,
+        destaque: form.destaque,
         ordem: form.ordem,
       };
       if (modal === 'novo') await api.post('/api/loja-acessorios/produtos', payload);
@@ -315,6 +318,12 @@ export function AdminAcessorios() {
                     style={{ width: 16, height: 16, margin: 0 }}
                     onChange={e => setForm(f => ({ ...f, ativo: e.target.checked }))} />
                   <span>Produto ativo (visível na loja)</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={form.destaque}
+                    style={{ width: 16, height: 16, margin: 0 }}
+                    onChange={e => setForm(f => ({ ...f, destaque: e.target.checked }))} />
+                  <span>⭐ Destacar como "Mais vendido"</span>
                 </label>
               </div>
             </div>
