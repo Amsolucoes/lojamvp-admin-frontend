@@ -249,6 +249,13 @@ async function trocarEmail() {
     }));
   }
 
+  function linkWhatsapp(telefone: string) {
+    const digitos = telefone.replace(/\D/g, '');
+    const comDdi = digitos.startsWith('55') ? digitos : `55${digitos}`;
+    const texto = `*${comunicadoForm.assunto}*\n\n${comunicadoForm.mensagem}`;
+    return `https://wa.me/${comDdi}?text=${encodeURIComponent(texto)}`;
+  }
+
   function adicionarEmailExtra() {
     const email = novoEmailExtra.trim().toLowerCase();
     if (!email || !email.includes('@')) { toastErro('Informe um e-mail válido.'); return; }
@@ -739,6 +746,34 @@ async function trocarEmail() {
                       {comunicadoForm.lojaIds.length} loja(s) selecionada(s) — a lista respeita os filtros aplicados na tela.
                     </p>
                   )}
+
+                  <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                    <label className="form-label" style={{ marginBottom: 8, display: 'block' }}>
+                      📱 Enviar por WhatsApp <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(um por vez — abre o chat já com a mensagem pronta)</span>
+                    </label>
+                    {!comunicadoForm.assunto.trim() || !comunicadoForm.mensagem.trim() ? (
+                      <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Preencha assunto e mensagem acima pra liberar os links.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+                        {lojas.filter(l => !l.ehTeste && l.telefone).map(l => (
+                          <div key={l.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 500 }}>{l.nome}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{l.telefone}</div>
+                            </div>
+                            <a href={linkWhatsapp(l.telefone!)} target="_blank" rel="noreferrer" className="btn-secondary" style={{ fontSize: 12, textDecoration: 'none' }}>
+                              Abrir WhatsApp
+                            </a>
+                          </div>
+                        ))}
+                        {lojas.filter(l => !l.ehTeste && !l.telefone).length > 0 && (
+                          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+                            {lojas.filter(l => !l.ehTeste && !l.telefone).length} loja(s) sem telefone cadastrado, não aparecem aqui.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="form-group" style={{ marginTop: 16 }}>
                     <label className="form-label">E-mails extras <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(teste, ou alguém fora das lojas)</span></label>
