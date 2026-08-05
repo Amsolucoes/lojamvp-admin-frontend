@@ -249,10 +249,16 @@ async function trocarEmail() {
     }));
   }
 
+  function limparEmoji(texto: string) {
+    // Remove emojis (fora do plano básico Unicode) — alguns navegadores/áreas de
+    // transferência corrompem esses caracteres ao colar, então tira o risco pro WhatsApp.
+    return texto.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/[ \t]+\n/g, '\n').trim();
+  }
+
   function linkWhatsapp(telefone: string) {
     const digitos = telefone.replace(/\D/g, '');
     const comDdi = digitos.startsWith('55') ? digitos : `55${digitos}`;
-    const texto = `*${comunicadoForm.assunto}*\n\n${comunicadoForm.mensagem}`;
+    const texto = `*${limparEmoji(comunicadoForm.assunto)}*\n\n${limparEmoji(comunicadoForm.mensagem)}`;
     return `https://wa.me/${comDdi}?text=${encodeURIComponent(texto)}`;
   }
 
