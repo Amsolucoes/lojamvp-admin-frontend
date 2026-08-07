@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign, MoreVertical } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -66,7 +66,9 @@ export function AdminLojas() {
   const [modalTrial, setModalTrial] = useState(false);
   const [novaDataTrial, setNovaDataTrial] = useState('');
   const [modalComunicado, setModalComunicado] = useState(false);
-  const [comunicadoForm, setComunicadoForm] = useState({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [] as string[], emailsExtras: [] as string[] });
+  const [comunicadoForm, setComunicadoForm] = useState({ assunto: '', mensagem: '', imagemUrl: '', todasLojas: true, lojaIds: [] as string[], emailsExtras: [] as string[] });
+  const [uploadingImagemComunicado, setUploadingImagemComunicado] = useState(false);
+  const fileImagemComunicadoRef = useRef<HTMLInputElement>(null);
   const [novoEmailExtra, setNovoEmailExtra] = useState('');
   const [enviandoComunicado, setEnviandoComunicado] = useState(false);
   const [resultadoComunicado, setResultadoComunicado] = useState<{ totalEnviados: number; totalFalhas: number; falhas: string[] } | null>(null);
@@ -242,6 +244,24 @@ async function trocarEmail() {
     }
   }
 
+  async function uploadImagemComunicado(file: File) {
+    setUploadingImagemComunicado(true);
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      data.append('upload_preset', 'loja-logos');
+      data.append('folder', 'comunicados');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dnwnwshvq/image/upload', { method: 'POST', body: data });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message ?? 'Erro no upload');
+      setComunicadoForm(f => ({ ...f, imagemUrl: json.secure_url }));
+    } catch (e) {
+      toastErro('Erro ao enviar imagem: ' + (e as Error).message);
+    } finally {
+      setUploadingImagemComunicado(false);
+    }
+  }
+
   function toggleLojaComunicado(id: string) {
     setComunicadoForm(f => ({
       ...f,
@@ -300,7 +320,10 @@ async function trocarEmail() {
     setEnviandoComunicado(true);
     setResultadoComunicado(null);
     try {
-      const corpoHtml = comunicadoForm.mensagem
+      const imagemHtml = comunicadoForm.imagemUrl
+        ? `<img src="${comunicadoForm.imagemUrl}" alt="" style="max-width:100%;border-radius:8px;margin-bottom:16px;display:block" />`
+        : '';
+      const corpoHtml = imagemHtml + comunicadoForm.mensagem
         .split('\n\n')
         .map(par => `<p style="margin:0 0 12px;line-height:1.6;color:#333">${par.replace(/\n/g, '<br>')}</p>`)
         .join('');
@@ -375,7 +398,7 @@ async function trocarEmail() {
             {verificando ? 'Verificando...' : '🔄 Verificar bloqueios'}
           </button>
           <button className="btn-secondary" onClick={() => {
-            setComunicadoForm({ assunto: '', mensagem: '', todasLojas: true, lojaIds: [], emailsExtras: [] });
+            setComunicadoForm({ assunto: '', mensagem: '', imagemUrl: '', todasLojas: true, lojaIds: [], emailsExtras: [] });
             setNovoEmailExtra('');
             setResultadoComunicado(null);
             setModalComunicado(true);
@@ -725,6 +748,24 @@ async function trocarEmail() {
                     <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
                       Todo e-mail já inclui um botão "Acessar o sistema" no final automaticamente.
                     </p>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 16 }}>
+                    <label className="form-label">Imagem <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(opcional — aparece no topo do e-mail)</span></label>
+                    {comunicadoForm.imagemUrl ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <img src={comunicadoForm.imagemUrl} alt="" style={{ maxWidth: 160, maxHeight: 90, borderRadius: 8, border: '1px solid var(--border)', objectFit: 'contain' }} />
+                        <button className="btn-secondary" onClick={() => setComunicadoForm(f => ({ ...f, imagemUrl: '' }))}>Remover</button>
+                      </div>
+                    ) : (
+                      <>
+                        <input ref={fileImagemComunicadoRef} type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadImagemComunicado(f); }} />
+                        <button className="btn-secondary" onClick={() => fileImagemComunicadoRef.current?.click()} disabled={uploadingImagemComunicado}>
+                          {uploadingImagemComunicado ? 'Enviando...' : '📷 Adicionar imagem'}
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}>
