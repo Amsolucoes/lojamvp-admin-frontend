@@ -1028,8 +1028,8 @@ async function trocarEmail() {
                       const lista = (form.modulosAtivos ?? '').split(',').map((m: string) => m.trim()).filter(Boolean);
                       const marcado = lista.includes(mod.chave);
                       return (
-                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: mod.disponivelParaAtivar ? 'pointer' : 'not-allowed', opacity: mod.disponivelParaAtivar ? 1 : 0.5, lineHeight: 1.2 }}>
-                          <input type="checkbox" checked={marcado} disabled={!mod.disponivelParaAtivar}
+                        <label key={mod.chave} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', lineHeight: 1.2 }}>
+                          <input type="checkbox" checked={marcado}
                             style={{ width: 16, height: 16, margin: 0, flexShrink: 0 }}
                             onChange={e => {
                               let nova = lista.filter((m: string) => m !== mod.chave);
@@ -1040,7 +1040,7 @@ async function trocarEmail() {
                             }} />
                           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             {mod.nome}{mod.valor > 0 ? ` — +R$${mod.valor.toFixed(2).replace('.', ',')}` : ''}
-                            {!mod.disponivelParaAtivar && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(em breve)</span>}
+                            {!mod.disponivelParaAtivar && <span style={{ fontSize: 11, color: 'var(--accent)' }}>(liberação manual)</span>}
                           </span>
                         </label>
                       );
