@@ -5,6 +5,31 @@ import { useToast } from '../../context/ToastContext';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 
+function fmtTelefone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2)  return `(${d}`;
+  if (d.length <= 7)  return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  if (d.length <= 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  return v;
+}
+
+function fmtCpf(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 3)  return d;
+  if (d.length <= 6)  return `${d.slice(0,3)}.${d.slice(3)}`;
+  if (d.length <= 9)  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+}
+
+function fmtCnpj(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 14);
+  if (d.length <= 2)  return d;
+  if (d.length <= 5)  return `${d.slice(0,2)}.${d.slice(2)}`;
+  if (d.length <= 8)  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8)}`;
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+}
+
 const STATUS_BADGE: Record<string, string> = {
   Ativo: 'badge-green', Trial: 'badge-blue',
   Bloqueado: 'badge-red', Cancelado: 'badge-red',
@@ -955,15 +980,15 @@ async function trocarEmail() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Telefone</label>
-                  <input value={form.telefone} onChange={e => setForm((f: any) => ({ ...f, telefone: e.target.value }))} placeholder="(11) 99999-9999" />
+                  <input value={form.telefone} onChange={e => setForm((f: any) => ({ ...f, telefone: fmtTelefone(e.target.value) }))} placeholder="(11) 99999-9999" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">CNPJ</label>
-                  <input value={form.cnpj} onChange={e => setForm((f: any) => ({ ...f, cnpj: e.target.value }))} placeholder="00.000.000/0001-00" />
+                  <input value={form.cnpj} onChange={e => setForm((f: any) => ({ ...f, cnpj: fmtCnpj(e.target.value) }))} placeholder="00.000.000/0001-00" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">CPF</label>
-                  <input value={form.cpf} onChange={e => setForm((f: any) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00" />
+                  <input value={form.cpf} onChange={e => setForm((f: any) => ({ ...f, cpf: fmtCpf(e.target.value) }))} placeholder="000.000.000-00" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Cor principal</label>
