@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign, MoreVertical, PackageX } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -81,6 +81,7 @@ export function AdminLojas() {
   const [erro, setErro]       = useState('');
   const [saving, setSaving]   = useState(false);
   const [modalDel, setModalDel] = useState<Loja | null>(null);
+  const [modalDelProdutos, setModalDelProdutos] = useState<Loja | null>(null);
   const [confirmaNome, setConfirmaNome] = useState('');
   const [modalEmail, setModalEmail] = useState<Loja | null>(null);
   const [emailForm, setEmailForm] = useState({ novoEmail: '', trocarLogin: true, trocarLoja: true });
@@ -105,7 +106,7 @@ export function AdminLojas() {
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
 
-  const algumModalAberto = !!(modal || modalDel || modalEmail || modalValor || modalTrial || modalComunicado || modalHistorico);
+  const algumModalAberto = !!(modal || modalDel || modalDelProdutos || modalEmail || modalValor || modalTrial || modalComunicado || modalHistorico);
 
   useEffect(() => {
     if (algumModalAberto) {
@@ -207,6 +208,21 @@ async function deletarLoja() {
       setConfirmaNome('');
     } catch (e) {
       toastErro('Erro ao deletar: ' + (e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+async function deletarProdutosEVendas() {
+    if (!modalDelProdutos || confirmaNome !== modalDelProdutos.nome) return;
+    setSaving(true);
+    try {
+      await api.delete(`/api/admin/lojas/${modalDelProdutos.id}/produtos-e-vendas`);
+      await carregar();
+      setModalDelProdutos(null);
+      setConfirmaNome('');
+    } catch (e) {
+      toastErro('Erro ao deletar produtos e vendas: ' + (e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -573,6 +589,7 @@ async function trocarEmail() {
                             : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
                           }
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
+                          <button className="btn-ghost" title="Deletar produtos e vendas" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={13} /></button>
                           <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                           <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
@@ -680,6 +697,8 @@ async function trocarEmail() {
                           onClick={() => { setMenuAberto(null); setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={14} /> Trocar e-mail</button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => { setMenuAberto(null); setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={14} /> Alterar valor</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--red)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={14} /> Deletar produtos e vendas</button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', color: 'var(--red)', textAlign: 'left' }}
                           onClick={() => { setMenuAberto(null); setModalDel(l); setConfirmaNome(''); }}><Trash2 size={14} /> Deletar</button>
                       </div>
@@ -1193,6 +1212,38 @@ async function trocarEmail() {
               </button>
               <button className="btn-danger" onClick={deletarLoja} disabled={saving || confirmaNome !== modalDel.nome}>
                 {saving ? 'Deletando...' : 'Deletar definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal deletar produtos, vendas e trocas (mantém clientes) */}
+      {modalDelProdutos && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalDelProdutos(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Deletar produtos e vendas</h2>
+              <button className="btn-ghost" onClick={() => setModalDelProdutos(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 14 }}>
+                Isso vai apagar todos os <strong style={{ color: 'var(--text-1)' }}>produtos, vendas e trocas</strong> de{' '}
+                <strong style={{ color: 'var(--text-1)' }}>{modalDelProdutos.nome}</strong>.{' '}
+                <strong style={{ color: 'var(--text-1)' }}>Clientes e usuários são mantidos.</strong>{' '}
+                <strong style={{ color: 'var(--red)' }}>Não pode ser desfeito.</strong>
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
+                Faça o backup antes, se precisar. Para confirmar, digite o nome da loja:
+              </p>
+              <input value={confirmaNome} onChange={e => setConfirmaNome(e.target.value)} placeholder={modalDelProdutos.nome} autoFocus />
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => fazerBackup(modalDelProdutos)}>
+                <Download size={13} /> Backup
+              </button>
+              <button className="btn-danger" onClick={deletarProdutosEVendas} disabled={saving || confirmaNome !== modalDelProdutos.nome}>
+                {saving ? 'Deletando...' : 'Deletar produtos e vendas'}
               </button>
             </div>
           </div>
