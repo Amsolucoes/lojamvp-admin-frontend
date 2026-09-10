@@ -589,8 +589,7 @@ async function trocarEmail() {
                             : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
                           }
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
-                          <button className="btn-ghost" title="Deletar produtos e vendas" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={13} /></button>
-                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                          <button className="btn-ghost" title="Deletar produtos, vendas e ajustes de caixa" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={13} /></button>                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                           <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
                           <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
@@ -698,7 +697,7 @@ async function trocarEmail() {
                         <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => { setMenuAberto(null); setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={14} /> Alterar valor</button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--red)', textAlign: 'left' }}
-                          onClick={() => { setMenuAberto(null); setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={14} /> Deletar produtos e vendas</button>
+                          onClick={() => { setMenuAberto(null); setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={14} /> Deletar produtos, vendas e ajustes de caixa</button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', color: 'var(--red)', textAlign: 'left' }}
                           onClick={() => { setMenuAberto(null); setModalDel(l); setConfirmaNome(''); }}><Trash2 size={14} /> Deletar</button>
                       </div>
@@ -1223,12 +1222,12 @@ async function trocarEmail() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalDelProdutos(null)}>
           <div className="modal" style={{ maxWidth: 440 }}>
             <div className="modal-header">
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Deletar produtos e vendas</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--red)' }}>Deletar produtos, vendas e caixa</h2>
               <button className="btn-ghost" onClick={() => setModalDelProdutos(null)}><X size={16} /></button>
             </div>
             <div className="modal-body">
               <p style={{ color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 14 }}>
-                Isso vai apagar todos os <strong style={{ color: 'var(--text-1)' }}>produtos, vendas e trocas</strong> de{' '}
+                Isso vai apagar todos os <strong style={{ color: 'var(--text-1)' }}>produtos, vendas, trocas e ajustes de caixa</strong> de{' '}
                 <strong style={{ color: 'var(--text-1)' }}>{modalDelProdutos.nome}</strong>.{' '}
                 <strong style={{ color: 'var(--text-1)' }}>Clientes e usuários são mantidos.</strong>{' '}
                 <strong style={{ color: 'var(--red)' }}>Não pode ser desfeito.</strong>
@@ -1243,7 +1242,7 @@ async function trocarEmail() {
                 <Download size={13} /> Backup
               </button>
               <button className="btn-danger" onClick={deletarProdutosEVendas} disabled={saving || confirmaNome !== modalDelProdutos.nome}>
-                {saving ? 'Deletando...' : 'Deletar produtos e vendas'}
+                {saving ? 'Deletando...' : 'Deletar produtos, vendas e caixa'}
               </button>
             </div>
           </div>
