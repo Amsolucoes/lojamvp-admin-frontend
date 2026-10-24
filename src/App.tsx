@@ -19,13 +19,27 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
   const startY = useRef(0);
   const puxando = useRef(false);
   const pullAtual = useRef(0);
+  const ultimoScroll = useRef(0);   // quando a lista rolou pela última vez (rolagem com inércia ainda em andamento)
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
+    // Qualquer rolagem cancela um "puxar" em andamento e marca o momento: a inércia de uma rolagem rápida
+    // de volta ao topo não pode ser confundida com o gesto de puxar para recarregar
+    function onScroll() {
+      ultimoScroll.current = Date.now();
+      if (puxando.current && el!.scrollTop > 0) {
+        puxando.current = false;
+        pullAtual.current = 0;
+        setPull(0);
+      }
+    }
     function onTouchStart(e: TouchEvent) {
-      if (el!.scrollTop <= 0) {
+      puxando.current = false;
+      pullAtual.current = 0;
+      const rolouAgora = Date.now() - ultimoScroll.current < 350;
+      if (el!.scrollTop <= 0 && !rolouAgora) {
         startY.current = e.touches[0].clientY;
         puxando.current = true;
       }
@@ -34,7 +48,8 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
       if (!puxando.current) return;
       const delta = e.touches[0].clientY - startY.current;
       if (delta > 0 && el!.scrollTop <= 0) {
-        const novoPull = Math.min(delta * 0.5, 90);
+        if (delta < 16) return;   // folga: um leve arrasto não mostra o carregando
+        const novoPull = Math.min((delta - 16) * 0.5, 90);
         pullAtual.current = novoPull;
         setPull(novoPull);
       } else {
@@ -44,7 +59,7 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
       }
     }
     function onTouchEnd() {
-      if (!puxando.current) return;
+      if (!puxando.current) { setPull(0); return; }
       puxando.current = false;
       if (pullAtual.current > 60) {
         setRecarregando(true);
@@ -55,10 +70,12 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
       }
     }
 
+    el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: true });
     el.addEventListener('touchend', onTouchEnd);
     return () => {
+      el.removeEventListener('scroll', onScroll);
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
