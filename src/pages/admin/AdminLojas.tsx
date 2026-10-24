@@ -103,6 +103,7 @@ export function AdminLojas() {
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState<string | null>(null);
+  const [erroDel, setErroDel] = useState('');
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
 
@@ -198,8 +199,14 @@ export function AdminLojas() {
     }
   }
 
+// Compara o nome digitado sem diferenciar maiúscula, acento nem espaços nas pontas (o teclado do celular costuma corrigir/capitalizar sozinho)
+const normalizarNome = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const nomeConfere = (digitado: string, nome: string) => normalizarNome(digitado) === normalizarNome(nome);
+
 async function deletarLoja() {
-    if (!modalDel || confirmaNome !== modalDel.nome) return;
+    if (!modalDel) return;
+    if (!nomeConfere(confirmaNome, modalDel.nome)) { setErroDel('O nome digitado não confere com o nome da loja.'); return; }
+    setErroDel('');
     setSaving(true);
     try {
       await api.delete(`/api/admin/lojas/${modalDel.id}`);
@@ -207,14 +214,18 @@ async function deletarLoja() {
       setModalDel(null);
       setConfirmaNome('');
     } catch (e) {
-      toastErro('Erro ao deletar: ' + (e as Error).message);
+      const msg = 'Não foi possível deletar: ' + ((e as Error).message || 'erro desconhecido');
+      setErroDel(msg);
+      toastErro(msg);
     } finally {
       setSaving(false);
     }
   }
 
 async function deletarProdutosEVendas() {
-    if (!modalDelProdutos || confirmaNome !== modalDelProdutos.nome) return;
+    if (!modalDelProdutos) return;
+    if (!nomeConfere(confirmaNome, modalDelProdutos.nome)) { setErroDel('O nome digitado não confere com o nome da loja.'); return; }
+    setErroDel('');
     setSaving(true);
     try {
       await api.delete(`/api/admin/lojas/${modalDelProdutos.id}/produtos-e-vendas`);
@@ -222,7 +233,9 @@ async function deletarProdutosEVendas() {
       setModalDelProdutos(null);
       setConfirmaNome('');
     } catch (e) {
-      toastErro('Erro ao deletar produtos e vendas: ' + (e as Error).message);
+      const msg = 'Não foi possível deletar: ' + ((e as Error).message || 'erro desconhecido');
+      setErroDel(msg);
+      toastErro(msg);
     } finally {
       setSaving(false);
     }
@@ -589,7 +602,7 @@ async function trocarEmail() {
                             : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
                           }
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
-                          <button className="btn-ghost" title="Deletar produtos, vendas e ajustes de caixa" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={13} /></button>                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); }}><Trash2 size={13} /></button>
+                          <button className="btn-ghost" title="Deletar produtos, vendas e ajustes de caixa" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); setErroDel(''); }}><PackageX size={13} /></button>                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); setErroDel(''); }}><Trash2 size={13} /></button>
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                           <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
                           <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
@@ -603,7 +616,7 @@ async function trocarEmail() {
 
             {/* Cards — mobile */}
             {menuAberto && (
-              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuAberto(null)} />
+              <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,.45)' }} onClick={() => setMenuAberto(null)} />
             )}
             <div className="admin-cards-mobile">
               {listaPaginada.map(l => (
@@ -680,26 +693,30 @@ async function trocarEmail() {
 
                     {menuAberto === l.id && (
                       <div style={{
-                        position: 'absolute', bottom: '100%', right: 0, marginBottom: 6, zIndex: 50,
-                        background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8,
-                        boxShadow: 'var(--shadow-lg)', minWidth: 190, overflow: 'hidden',
+                        position: 'fixed', left: 12, right: 12, bottom: 12, zIndex: 60,
+                        background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14,
+                        boxShadow: 'var(--shadow-lg)', maxHeight: '75vh', overflowY: 'auto',
                       }}>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
+                        <div style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-3)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                          <strong style={{ color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nome}</strong>
+                          <span>Mais ações</span>
+                        </div>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => {
                             setMenuAberto(null); setSel(l);
                             setNovaDataTrial(l.trialAte ? l.trialAte.slice(0, 10) : '');
                             setModalTrial(true);
                           }}>📅 Editar trial</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => { setMenuAberto(null); fazerBackup(l); }}><Download size={14} /> Backup</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => { setMenuAberto(null); setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={14} /> Trocar e-mail</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-1)' }}
                           onClick={() => { setMenuAberto(null); setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={14} /> Alterar valor</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--red)', textAlign: 'left' }}
-                          onClick={() => { setMenuAberto(null); setModalDelProdutos(l); setConfirmaNome(''); }}><PackageX size={14} /> Deletar produtos, vendas e ajustes de caixa</button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, background: 'transparent', border: 'none', color: 'var(--red)', textAlign: 'left' }}
-                          onClick={() => { setMenuAberto(null); setModalDel(l); setConfirmaNome(''); }}><Trash2 size={14} /> Deletar</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--red)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalDelProdutos(l); setConfirmaNome(''); setErroDel(''); }}><PackageX size={14} /> Deletar produtos, vendas e ajustes de caixa</button>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', fontSize: 13, background: 'transparent', border: 'none', color: 'var(--red)', textAlign: 'left' }}
+                          onClick={() => { setMenuAberto(null); setModalDel(l); setConfirmaNome(''); setErroDel(''); }}><Trash2 size={14} /> Deletar</button>
                       </div>
                     )}
                   </div>
@@ -1203,13 +1220,15 @@ async function trocarEmail() {
               <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
                 Faça o backup antes, se precisar. Para confirmar, digite o nome da loja:
               </p>
-              <input value={confirmaNome} onChange={e => setConfirmaNome(e.target.value)} placeholder={modalDel.nome} autoFocus />
+              <input value={confirmaNome} onChange={e => { setConfirmaNome(e.target.value); setErroDel(''); }} placeholder={modalDel.nome}
+                autoFocus autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+              {erroDel && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>{erroDel}</p>}
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => fazerBackup(modalDel)}>
                 <Download size={13} /> Backup
               </button>
-              <button className="btn-danger" onClick={deletarLoja} disabled={saving || confirmaNome !== modalDel.nome}>
+              <button className="btn-danger" onClick={deletarLoja} disabled={saving}>
                 {saving ? 'Deletando...' : 'Deletar definitivamente'}
               </button>
             </div>
@@ -1235,13 +1254,15 @@ async function trocarEmail() {
               <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
                 Faça o backup antes, se precisar. Para confirmar, digite o nome da loja:
               </p>
-              <input value={confirmaNome} onChange={e => setConfirmaNome(e.target.value)} placeholder={modalDelProdutos.nome} autoFocus />
+              <input value={confirmaNome} onChange={e => { setConfirmaNome(e.target.value); setErroDel(''); }} placeholder={modalDelProdutos.nome}
+                autoFocus autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+              {erroDel && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>{erroDel}</p>}
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => fazerBackup(modalDelProdutos)}>
                 <Download size={13} /> Backup
               </button>
-              <button className="btn-danger" onClick={deletarProdutosEVendas} disabled={saving || confirmaNome !== modalDelProdutos.nome}>
+              <button className="btn-danger" onClick={deletarProdutosEVendas} disabled={saving}>
                 {saving ? 'Deletando...' : 'Deletar produtos, vendas e caixa'}
               </button>
             </div>
