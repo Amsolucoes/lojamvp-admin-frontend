@@ -110,6 +110,12 @@ tbody td { padding: 11px 14px; vertical-align: middle; }
 
 .layout { display: flex; min-height: 100vh; }
 .layout-main { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+/* Desktop: a área principal é o próprio contêiner de rolagem (altura fixa da janela), em vez de depender
+   da rolagem da página — assim a roda do mouse sempre rola a lista, sem depender do encadeamento de rolagem */
+@media (min-width: 769px) {
+  .layout { height: 100vh; min-height: 0; overflow: hidden; }
+  .layout-main { min-height: 0; overscroll-behavior-y: auto; }
+}
 
 .layout-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-3); font-size: 14px; }
 .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
