@@ -337,21 +337,35 @@ async function trocarEmail() {
   }
 
   // Cobrança manual pelo WhatsApp: abre a conversa com a mensagem pronta; quem envia é você.
+  // O botão aparece para toda loja de verdade (não teste/cancelada); sem telefone fica desabilitado.
   function podeCobrar(l: Loja) {
-    return !!l.telefone && !l.ehTeste && l.status !== 'Cancelado'
-      && (l.emAtraso || l.status === 'Bloqueado' || l.fase === 'carencia');
+    return !l.ehTeste && l.status !== 'Cancelado';
+  }
+
+  function botaoCobrar(l: Loja, size: number) {
+    if (!l.telefone) {
+      return <button className="btn-ghost" disabled title="Sem telefone cadastrado" style={{ opacity: .4 }}><MessageCircle size={size} /></button>;
+    }
+    return (
+      <a className="btn-ghost" title="Cobrar pelo WhatsApp" style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}
+        href={linkCobrancaWhatsapp(l)} target="_blank" rel="noreferrer"><MessageCircle size={size} /></a>
+    );
   }
 
   function linkCobrancaWhatsapp(l: Loja) {
     const digitos = (l.telefone ?? '').replace(/\D/g, '');
     const comDdi = digitos.startsWith('55') ? digitos : `55${digitos}`;
     const venc = l.proximoVencimento ?? l.trialAte;
-    const quando = venc ? ` com vencimento em ${new Date(venc).toLocaleDateString('pt-BR')}` : '';
+    const dataVenc = venc ? new Date(venc).toLocaleDateString('pt-BR') : '';
+    const emAberto = l.emAtraso || l.status === 'Bloqueado';
     const atraso = l.diasAtraso > 0 ? ` (${l.diasAtraso} ${l.diasAtraso === 1 ? 'dia' : 'dias'} de atraso)` : '';
     const bloqueio = l.status === 'Bloqueado' ? ' O acesso ao sistema está bloqueado e é liberado assim que o pagamento for confirmado.' : '';
+    const assunto = emAberto
+      ? `A mensalidade de ${fmt(l.mensalidadeValor)}${dataVenc ? ` com vencimento em ${dataVenc}` : ''} está em aberto${atraso}.${bloqueio}`
+      : `Passando para lembrar que a mensalidade de ${fmt(l.mensalidadeValor)} ${dataVenc ? `vence em ${dataVenc}` : 'está próxima do vencimento'}.`;
     const texto =
       `Olá, ${l.nome}! Aqui é da AldevSoftware.\n\n` +
-      `A mensalidade de ${fmt(l.mensalidadeValor)}${quando} está em aberto${atraso}.${bloqueio}\n\n` +
+      `${assunto}\n\n` +
       `Você pode pagar por Pix, boleto ou cartão em: https://admin.aldevsoftware.com.br/cliente\n\n` +
       `Se já pagou, é só desconsiderar esta mensagem. Qualquer dúvida, é só responder por aqui.`;
     return `https://wa.me/${comDdi}?text=${encodeURIComponent(texto)}`;
@@ -622,10 +636,7 @@ async function trocarEmail() {
                             ? <button className="btn-ghost" style={{ color: 'var(--green)' }} title="Desbloquear" onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={13} /></button>
                             : <button className="btn-ghost" style={{ color: 'var(--red)' }} title="Bloquear" onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={13} /></button>
                           }
-                          {podeCobrar(l) && (
-                            <a className="btn-ghost" title="Cobrar pelo WhatsApp" style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}
-                              href={linkCobrancaWhatsapp(l)} target="_blank" rel="noreferrer"><MessageCircle size={13} /></a>
-                          )}
+                          {podeCobrar(l) && botaoCobrar(l, 13)}
                           <button className="btn-ghost" title="Backup" onClick={() => fazerBackup(l)}><Download size={13} /></button>
                           <button className="btn-ghost" title="Deletar produtos, vendas e ajustes de caixa" style={{ color: 'var(--red)' }} onClick={() => { setModalDelProdutos(l); setConfirmaNome(''); setErroDel(''); }}><PackageX size={13} /></button>                          <button className="btn-ghost" title="Deletar" style={{ color: 'var(--red)' }} onClick={() => { setModalDel(l); setConfirmaNome(''); setErroDel(''); }}><Trash2 size={13} /></button>
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
@@ -713,10 +724,7 @@ async function trocarEmail() {
                       ? <button className="btn-ghost" title="Ativar" style={{ color: 'var(--green)' }} onClick={() => alterarStatus(l, 'Ativo')}><Unlock size={15} /></button>
                       : <button className="btn-ghost" title="Bloquear" style={{ color: 'var(--red)' }} onClick={() => alterarStatus(l, 'Bloqueado')}><Lock size={15} /></button>
                     }
-                    {podeCobrar(l) && (
-                      <a className="btn-ghost" title="Cobrar pelo WhatsApp" style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}
-                        href={linkCobrancaWhatsapp(l)} target="_blank" rel="noreferrer"><MessageCircle size={15} /></a>
-                    )}
+                    {podeCobrar(l) && botaoCobrar(l, 15)}
                     <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={15} /></button>
                     <button className="btn-ghost" title="Mais ações" onClick={() => setMenuAberto(menuAberto === l.id ? null : l.id)}><MoreVertical size={15} /></button>
 
