@@ -26,7 +26,7 @@ const MODULOS_DISPONIVEIS = [
   { chave: 'turmas', label: 'Turmas' },
   { chave: 'corretora', label: 'Corretora' },
   { chave: 'financeiro', label: 'Financeiro' },
-  { chave: 'nf', label: 'Importação de NF' },
+  { chave: 'nf', label: 'Entrada de NF' },
   { chave: 'funcionarios', label: 'Funcionários' },
   { chave: 'chacara_reservas', label: 'Chácara Reservas' },
 ];
