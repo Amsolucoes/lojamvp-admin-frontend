@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/login/Login';
@@ -13,7 +13,7 @@ import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
 // Puxar a tela pra baixo no topo do scroll recarrega o app — padrão comum em apps mobile
-function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
+function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>, onRefresh: () => void) {
   const [pull, setPull] = useState(0);
   const [recarregando, setRecarregando] = useState(false);
   const startY = useRef(0);
@@ -27,9 +27,12 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
 
     // Qualquer rolagem cancela um "puxar" em andamento e marca o momento: a inércia de uma rolagem rápida
     // de volta ao topo não pode ser confundida com o gesto de puxar para recarregar
+    // No mobile quem rola é a página (window); no desktop é o <main>. Um dos dois é sempre 0.
+    const topoDaRolagem = () => Math.max(window.scrollY, el!.scrollTop);
+
     function onScroll() {
       ultimoScroll.current = Date.now();
-      if (puxando.current && el!.scrollTop > 0) {
+      if (puxando.current && topoDaRolagem() > 0) {
         puxando.current = false;
         pullAtual.current = 0;
         setPull(0);
@@ -39,7 +42,7 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
       puxando.current = false;
       pullAtual.current = 0;
       const rolouAgora = Date.now() - ultimoScroll.current < 350;
-      if (el!.scrollTop <= 0 && !rolouAgora) {
+      if (topoDaRolagem() <= 0 && !rolouAgora) {
         startY.current = e.touches[0].clientY;
         puxando.current = true;
       }
@@ -47,7 +50,7 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
     function onTouchMove(e: TouchEvent) {
       if (!puxando.current) return;
       const delta = e.touches[0].clientY - startY.current;
-      if (delta > 0 && el!.scrollTop <= 0) {
+      if (delta > 0 && topoDaRolagem() <= 0) {
         if (delta < 16) return;   // folga: um leve arrasto não mostra o carregando
         const novoPull = Math.min((delta - 16) * 0.5, 90);
         pullAtual.current = novoPull;
@@ -64,30 +67,35 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>) {
       if (pullAtual.current > 60) {
         setRecarregando(true);
         setPull(60);
-        window.location.reload();
+        onRefresh();
+        setTimeout(() => { setRecarregando(false); setPull(0); }, 600);
       } else {
         setPull(0);
       }
     }
 
     el.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: true });
     el.addEventListener('touchend', onTouchEnd);
     return () => {
       el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
     };
-  }, [containerRef]);
+  }, [containerRef, onRefresh]);
 
   return { pull, recarregando };
 }
 
 function Layout() {
   const mainRef = useRef<HTMLElement | null>(null);
-  const { pull, recarregando } = usePullToRefresh(mainRef);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey(k => k + 1), []);   // remonta a tela (refaz os fetches) sem recarregar o app
+  const { pull, recarregando } = usePullToRefresh(mainRef, refresh);
 
   return (
     <div className="layout">
@@ -110,7 +118,7 @@ function Layout() {
             }} />
           </div>
         )}
-        <Outlet />
+        <Outlet key={refreshKey} />
       </main>
     </div>
   );

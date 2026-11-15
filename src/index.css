@@ -109,13 +109,16 @@ tbody td { padding: 11px 14px; vertical-align: middle; }
 .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-3); gap: 8px; }
 
 .layout { display: flex; min-height: 100vh; }
-.layout-main { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior-y: contain; }
-/* Desktop: a área principal é o próprio contêiner de rolagem (altura fixa da janela), em vez de depender
-   da rolagem da página — assim a roda do mouse sempre rola a lista, sem depender do encadeamento de rolagem */
+.layout-main { flex: 1; min-width: 0; }
+/* Desktop: a área principal é o próprio contêiner de rolagem (altura fixa da janela).
+   Mobile: quem rola é a PÁGINA (window) — .layout-main NÃO pode ser contêiner de rolagem nem ter overscroll-behavior */
 @media (min-width: 769px) {
   .layout { height: 100vh; min-height: 0; overflow: hidden; }
-  .layout-main { min-height: 0; overscroll-behavior-y: auto; }
+  .layout-main { min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; }
 }
+
+/* Tabelas largas: rolagem horizontal só dentro do wrapper (classe já usada nas telas, faltava o CSS) */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .layout-loading { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-3); font-size: 14px; }
 .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
@@ -141,7 +144,7 @@ input, select, textarea {
   :root { --sidebar-w: 0px; }
 
   .layout { flex-direction: column; }
-  .layout-main { overflow-y: auto; }
+  .layout-main { overflow-x: clip; }   /* cinto de segurança: clip NÃO cria contêiner de rolagem */
 
   .page { padding: 16px; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -150,9 +153,12 @@ input, select, textarea {
   .stat-card { padding: 14px; }
   .stat-value { font-size: 22px; }
 
-  .modal { max-width: 100% !important; max-height: 90vh; overflow-y: auto; }
+  .modal { max-width: 100% !important; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden; }
   .modal-overlay { align-items: flex-end; padding: 0; }
   .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  /* Só o corpo rola; header e footer ficam fixos. Anula o maxHeight:70vh inline que gerava rolagem aninhada */
+  .modal-header, .modal-footer { flex-shrink: 0; }
+  .modal-body { flex: 1 1 auto; min-height: 0; max-height: none !important; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 
   .form-grid-2 { grid-template-columns: 1fr !important; }
 

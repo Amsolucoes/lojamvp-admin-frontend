@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Building2, TrendingUp, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { api, DashboardAdmin } from '../../services/api';
+import './AdminDashboard.css';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function fmtData(s?: string) { return s ? new Date(s).toLocaleDateString('pt-BR') : '—'; }
@@ -106,7 +107,7 @@ export function AdminDashboard() {
         {data.lojasAtrasadas.length > 0 && (
           <div className="card">
             <div className="dash-section-title"><AlertTriangle size={14} style={{ color: 'var(--yellow)' }} /> Lojas em atraso</div>
-            <table>
+            <div className="table-wrap"><table>
               <thead><tr><th>Loja</th><th>Vencimento</th><th>Dias</th><th>Valor</th><th>Status</th></tr></thead>
               <tbody>
                 {data.lojasAtrasadas.map((l: any) => (
@@ -119,7 +120,7 @@ export function AdminDashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
 
@@ -128,7 +129,7 @@ export function AdminDashboard() {
           {data.ultimosPagamentos.length === 0 ? (
             <div className="empty" style={{ padding: '30px 0' }}><p>Nenhum pagamento ainda.</p></div>
           ) : (
-            <table>
+            <div className="table-wrap"><table>
               <thead><tr><th>Loja</th><th>Forma</th><th>Valor</th><th>Data</th></tr></thead>
               <tbody>
                 {data.ultimosPagamentos.map(p => (
@@ -140,7 +141,7 @@ export function AdminDashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

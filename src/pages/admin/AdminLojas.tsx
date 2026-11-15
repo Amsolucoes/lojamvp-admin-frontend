@@ -107,7 +107,7 @@ export function AdminLojas() {
   const { erro: toastErro, sucesso: toastSucesso } = useToast();
   const [modulosPreco, setModulosPreco] = useState<{ chave: string; nome: string; valor: number; disponivelParaAtivar: boolean }[]>([]);
 
-  const algumModalAberto = !!(modal || modalDel || modalDelProdutos || modalEmail || modalValor || modalTrial || modalComunicado || modalHistorico);
+  const algumModalAberto = !!(modal || modalDel || modalDelProdutos || modalEmail || modalValor || modalTrial || modalComunicado || modalHistorico || menuAberto);
 
   useEffect(() => {
     if (algumModalAberto) {
@@ -482,7 +482,7 @@ async function trocarEmail() {
           <h1 className="page-title">Lojas</h1>
           <p className="page-subtitle">{lista.length} de {lojas.length} loja(s)</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn-secondary" onClick={verificarBloqueios} disabled={verificando} title="Reavalia o status de todas as lojas (bloqueia inadimplentes)">
             {verificando ? 'Verificando...' : '🔄 Verificar bloqueios'}
           </button>
@@ -732,7 +732,7 @@ async function trocarEmail() {
                       <div style={{
                         position: 'fixed', left: 12, right: 12, bottom: 12, zIndex: 60,
                         background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 14,
-                        boxShadow: 'var(--shadow-lg)', maxHeight: '75vh', overflowY: 'auto',
+                        boxShadow: 'var(--shadow-lg)', maxHeight: '75dvh', overflowY: 'auto',
                       }}>
                         <div style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-3)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                           <strong style={{ color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nome}</strong>
