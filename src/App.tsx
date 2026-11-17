@@ -11,6 +11,7 @@ import { AdminAcessorios } from './pages/admin/AdminAcessorios';
 import { AdminPedidosAcessorios } from './pages/admin/AdminPedidosAcessorios';
 import { ClienteDashboard } from './pages/cliente/ClienteDashboard';
 import { ClienteFaturas } from './pages/cliente/ClienteFaturas';
+import { Suporte } from './pages/login/Suporte';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
@@ -94,6 +95,7 @@ function usePullToRefresh(containerRef: React.RefObject<HTMLElement | null>, onR
 }
 
 function Layout() {
+  const { sessao } = useAuth();
   const mainRef = useRef<HTMLElement | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);   // remonta a tela (refaz os fetches) sem recarregar o app
@@ -103,6 +105,11 @@ function Layout() {
     <div className="layout">
       <Sidebar />
       <main className="layout-main" ref={mainRef} style={{ position: 'relative' }}>
+        {sessao?.suporte && (
+          <div style={{ background: 'rgba(96,165,250,.12)', border: '1px solid rgba(96,165,250,.35)', color: 'var(--blue)', borderRadius: 8, padding: '8px 14px', fontSize: 13, margin: '12px 16px 0' }}>
+            Acesso de suporte — você está vendo o painel de <strong>{sessao.lojaNome ?? 'um cliente'}</strong>. Os dados e ações valem para essa loja.
+          </div>
+        )}
         {pull > 0 && (
           <div style={{
             position: 'absolute', top: 0, left: '50%', transform: `translate(-50%, ${pull - 40}px)`,
@@ -128,6 +135,9 @@ function Layout() {
 
 function Rotas() {
   const { sessao } = useAuth();
+
+  // Entrada do acesso de suporte (botão "Ver painel do cliente" em Lojas): grava a sessão só nesta aba e segue para /cliente
+  if (window.location.pathname === '/suporte') return <Suporte />;
 
   if (!sessao) {
     return (

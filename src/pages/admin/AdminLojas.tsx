@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Mail, DollarSign, MoreVertical, PackageX, MessageCircle } from 'lucide-react';
+import { Plus, Edit2, Lock, Unlock, X, Search, Building2, Download, Trash2, LogIn, Eye, Mail, DollarSign, MoreVertical, PackageX, MessageCircle } from 'lucide-react';
 import { api, Loja } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -254,11 +254,15 @@ async function trocarEmail() {
     finally { setSaving(false); }
   }
 
- async function acessarLoja(loja: Loja) {
+  async function gerarAcesso(loja: Loja) {
+    return api.post<{ token: string; nome: string; email: string; role: string; nomeLoja?: string }>(
+      `/api/admin/lojas/${loja.id}/acessar`, {}
+    );
+  }
+
+  async function acessarLoja(loja: Loja) {
     try {
-      const res = await api.post<{ token: string; nome: string; email: string; role: string }>(
-        `/api/admin/lojas/${loja.id}/acessar`, {}
-      );
+      const res = await gerarAcesso(loja);
       const dados = encodeURIComponent(JSON.stringify({
         token: res.token, nome: res.nome, email: res.email, role: res.role,
       }));
@@ -266,6 +270,19 @@ async function trocarEmail() {
       window.open(url, '_blank');
     } catch (e) {
       toastErro('Erro ao acessar loja: ' + (e as Error).message);
+    }
+  }
+
+  // Abre, em outra aba deste admin, o painel do cliente (Minha Assinatura e Faturas) como aquela loja vê
+  async function abrirPainelCliente(loja: Loja) {
+    try {
+      const res = await gerarAcesso(loja);
+      const dados = encodeURIComponent(JSON.stringify({
+        token: res.token, nome: res.nome, email: res.email, role: res.role, lojaNome: res.nomeLoja ?? loja.nome,
+      }));
+      window.open(`${window.location.origin}/suporte#${dados}`, '_blank');
+    } catch (e) {
+      toastErro('Erro ao abrir o painel do cliente: ' + (e as Error).message);
     }
   }
 
@@ -642,6 +659,7 @@ async function trocarEmail() {
                           <button className="btn-ghost" title="Trocar e-mail" onClick={() => { setModalEmail(l); setEmailForm({ novoEmail: '', trocarLogin: true, trocarLoja: true }); setErro(''); }}><Mail size={13} /></button>
                           <button className="btn-ghost" title="Alterar valor" onClick={() => { setModalValor(l); setValorForm({ novoValor: String(l.mensalidadeValor), sincronizar: false }); setErro(''); }}><DollarSign size={13} /></button>
                           <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={13} /></button>
+                          <button className="btn-ghost" title="Ver painel do cliente (assinatura e faturas)" style={{ color: 'var(--blue)' }} onClick={() => abrirPainelCliente(l)}><Eye size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -726,6 +744,7 @@ async function trocarEmail() {
                     }
                     {podeCobrar(l) && botaoCobrar(l, 15)}
                     <button className="btn-ghost" title="Acessar como suporte" style={{ color: 'var(--blue)' }} onClick={() => acessarLoja(l)}><LogIn size={15} /></button>
+                    <button className="btn-ghost" title="Ver painel do cliente (assinatura e faturas)" style={{ color: 'var(--blue)' }} onClick={() => abrirPainelCliente(l)}><Eye size={15} /></button>
                     <button className="btn-ghost" title="Mais ações" onClick={() => setMenuAberto(menuAberto === l.id ? null : l.id)}><MoreVertical size={15} /></button>
 
                     {menuAberto === l.id && (
