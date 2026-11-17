@@ -15,8 +15,7 @@ const NAV_SUPER = [
 ];
 
 const NAV_CLIENTE = [
-  { to: '/cliente',          icon: LayoutDashboard, label: 'Minha Assinatura' },
-  { to: '/cliente/faturas',  icon: CreditCard,      label: 'Faturas'          },
+  { to: '/cliente',          icon: LayoutDashboard, label: 'Minha Assinatura' },   // o histórico de faturas e o botão Pagar ficam nessa tela
 ];
 
 function ini(nome: string) {
