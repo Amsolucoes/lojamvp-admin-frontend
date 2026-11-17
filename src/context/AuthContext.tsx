@@ -1,10 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { api } from '../services/api';
+import { gravarSessao, lerSessaoBruta, limparSessao } from '../services/sessaoStorage';
 
 interface Sessao {
   nome: string; email: string;
   role: 'superadmin' | 'admin' | 'operador';
   token: string;
+  suporte?: boolean;    // superadmin vendo o painel de um cliente (aba de suporte)
+  lojaNome?: string;
 }
 
 interface AuthCtx {
@@ -15,9 +18,9 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-function salvar(s: Sessao) { localStorage.setItem('admin:sessao', JSON.stringify(s)); }
+function salvar(s: Sessao) { gravarSessao(JSON.stringify(s)); }
 function carregar(): Sessao | null {
-  try { return JSON.parse(localStorage.getItem('admin:sessao') ?? 'null'); }
+  try { return JSON.parse(lerSessaoBruta() ?? 'null'); }
   catch { return null; }
 }
 
@@ -38,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     setSessao(null);
-    localStorage.removeItem('admin:sessao');
+    limparSessao();
     window.location.href = '/login';
   }
 

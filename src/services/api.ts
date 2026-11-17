@@ -1,12 +1,14 @@
+import { lerSessaoBruta, limparSessao } from './sessaoStorage';
+
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
 function getToken(): string | null {
-  try { return JSON.parse(localStorage.getItem('admin:sessao') ?? 'null')?.token; }
+  try { return JSON.parse(lerSessaoBruta() ?? 'null')?.token; }
   catch { return null; }
 }
 
 function handleUnauth() {
-  localStorage.removeItem('admin:sessao');
+  limparSessao();
   window.location.href = '/login';
 }
 
