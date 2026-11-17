@@ -107,7 +107,7 @@ function Layout() {
       <main className="layout-main" ref={mainRef} style={{ position: 'relative' }}>
         {sessao?.suporte && (
           <div style={{ background: 'rgba(96,165,250,.12)', border: '1px solid rgba(96,165,250,.35)', color: 'var(--blue)', borderRadius: 8, padding: '8px 14px', fontSize: 13, margin: '12px 16px 0' }}>
-            Acesso de suporte — você está vendo o painel de <strong>{sessao.lojaNome ?? 'um cliente'}</strong>. Os dados e ações valem para essa loja.
+            Acesso de suporte — você está vendo o painel de <strong>{sessao.lojaNome ?? 'um cliente'}</strong>. Modo somente leitura: pagar e alterar a assinatura estão desativados.
           </div>
         )}
         {pull > 0 && (

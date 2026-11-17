@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { api, DashboardCliente, Pagamento } from '../../services/api';
 import { PagarFaturaModal } from './PagarFaturaModal';
+import { useAuth } from '../../context/AuthContext';
 
 function fmt(n: number) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function fmtData(s?: string) { return s ? new Date(s).toLocaleDateString('pt-BR') : '—'; }
@@ -28,6 +29,8 @@ export function ClienteFaturas() {
   const [erro, setErro]         = useState(false);
   const [filtro, setFiltro]     = useState<Filtro>('todas');
   const [pagar, setPagar]       = useState<Pagamento | null>(null);
+  const { sessao } = useAuth();
+  const somenteLeitura = !!sessao?.suporte;   // aba de suporte: não gera Pix na conta do cliente
 
   useEffect(() => { carregar(); }, []);
 
@@ -61,7 +64,7 @@ export function ClienteFaturas() {
   ];
 
   const botaoPagar = (f: Pagamento, cheio = false) =>
-    (f.status === 'pendente' || f.status === 'atrasado') && (
+    !somenteLeitura && (f.status === 'pendente' || f.status === 'atrasado') && (
       <button className={cheio ? 'btn-primary' : 'btn-secondary'}
         style={cheio ? { width: '100%', marginTop: 10, fontSize: 13 } : { padding: '5px 12px', fontSize: 12 }}
         onClick={() => setPagar(f)}>
