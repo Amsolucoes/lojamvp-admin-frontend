@@ -8,7 +8,6 @@ import './Sidebar.css';
 const NAV_SUPER = [
   { to: '/admin',            icon: LayoutDashboard, label: 'Dashboard'   },
   { to: '/admin/lojas',      icon: Building2,       label: 'Lojas'       },
-  { to: '/admin/pagamentos', icon: CreditCard,      label: 'Pagamentos'  },
   { to: '/admin/videos',     icon: PlayCircle,      label: 'Vídeos de Ajuda' },
   { to: '/admin/acessorios', icon: Package,         label: 'Loja de Acessórios' },
   { to: '/admin/acessorios/pedidos', icon: Truck,   label: 'Pedidos de Acessórios' },
