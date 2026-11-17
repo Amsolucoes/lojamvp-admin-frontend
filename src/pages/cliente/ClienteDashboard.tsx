@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CreditCard, CheckCircle, AlertTriangle, Clock, X } from 'lucide-react';
 import { api, DashboardCliente, Pagamento } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { PagarFaturaModal } from './PagarFaturaModal';
 
 declare global {
@@ -21,6 +22,8 @@ export function ClienteDashboard() {
   const [cartao, setCartao] = useState({ numero: '', nome: '', validade: '', cvv: '', cpf: '' });
   const [erroCartao, setErroCartao] = useState('');
   const { erro: toastErro } = useToast();
+  const { sessao } = useAuth();
+  const somenteLeitura = !!sessao?.suporte;   // aba de suporte: só olhar, sem pagar nem mexer na assinatura do cliente
 
   useEffect(() => { carregar(); }, []);
 
@@ -144,7 +147,7 @@ export function ClienteDashboard() {
               )}
             </div>
           </div>
-          {data.faturaPendente && (
+          {data.faturaPendente && !somenteLeitura && (
             <button className="btn-primary" onClick={() => abrirPagamento(data.faturaPendente!)}>
               <CreditCard size={15} style={{ verticalAlign: -2 }} /> Pagar {fmt(data.faturaPendente.valor)}
             </button>
@@ -170,7 +173,7 @@ export function ClienteDashboard() {
               )}
             </div>
           </div>
-          {data.assinaturaStatus === 'authorized' ? (
+          {somenteLeitura ? null : data.assinaturaStatus === 'authorized' ? (
             <button className="btn-secondary" style={{ color: 'var(--red)' }} onClick={cancelarAssinatura} disabled={assinando}>
               {assinando ? 'Processando...' : 'Cancelar'}
             </button>
@@ -205,7 +208,7 @@ export function ClienteDashboard() {
                   <td style={{ color: 'var(--text-3)' }}>{f.formaPagamento ?? '—'}</td>
                   <td style={{ color: 'var(--text-3)' }}>{fmtData(f.pagoEm)}</td>
                   <td>
-                    {(f.status === 'pendente' || f.status === 'atrasado') && (
+                    {!somenteLeitura && (f.status === 'pendente' || f.status === 'atrasado') && (
                       <button className="btn-secondary" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => abrirPagamento(f)}>
                         Pagar
                       </button>
@@ -235,7 +238,7 @@ export function ClienteDashboard() {
                   {f.status === 'atrasado' && <span className="badge badge-red">Atrasado</span>}
                 </div>
               </div>
-              {(f.status === 'pendente' || f.status === 'atrasado') && (
+              {!somenteLeitura && (f.status === 'pendente' || f.status === 'atrasado') && (
                 <button className="btn-primary" style={{ width: '100%', marginTop: 10, fontSize: 13 }}
                   onClick={() => abrirPagamento(f)}>
                   Pagar {fmt(f.valor)}
